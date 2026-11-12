@@ -15,8 +15,12 @@ Referência de funcionalidades: plataforma.foodwise.app.br. Usar apenas como ins
 
 - **Next.js 16** (App Router, pasta `src/`), **TypeScript**, **Tailwind CSS 4**
 - **UI**: shadcn/ui (sugerido), com gráficos do shadcn ou do Tremor no dashboard do SuperAdmin
-- **Banco**: PostgreSQL no **Neon** (banco `dblillyfood`), acessado pela variável `DATABASE_URL` (connection string *pooled*)
-- **ORM**: a definir (recomendado: Drizzle; alternativa: Prisma)
+- **Banco**: PostgreSQL 18 no **Neon**, projeto `dblillyfood` (banco `neondb`), criado pela integração Vercel ↔ Neon e conectado ao projeto `foodlilly` na Vercel. Acesso pela variável `DATABASE_URL` (connection string *pooled*). A integração também cria `DATABASE_URL_UNPOOLED` (conexão direta, útil para migrations).
+- **ORM**: **Drizzle** com o driver `@neondatabase/serverless` (modo HTTP, `drizzle-orm/neon-http`)
+  - Conexão em `src/db/index.ts` (importa `server-only`, nunca usar em Client Components); tabelas em `src/db/schema.ts`
+  - Migrations em `drizzle/` (versionadas no Git): alterar o schema → `npm run db:generate` → revisar o SQL → `npm run db:migrate`
+  - `npm run db:studio` abre um navegador visual do banco
+  - O modo HTTP não suporta transações interativas (`db.transaction`). Se precisar (ex.: webhook do Pix), usar `db.batch([...])` ou trocar para `drizzle-orm/neon-serverless` (WebSocket)
 - **Hospedagem**: Vercel, com deploy automático a cada push na `main`. Domínio próprio será comprado depois.
 - **Repositório**: github.com/lillymenuu/foodlilly
 
@@ -41,6 +45,6 @@ Validar sempre o webhook consultando o pagamento na API do Mercado Pago antes de
 ## Pendências do alinhamento
 
 - [ ] Lista final de tecnologias (vinda do dono do projeto)
-- [ ] Escolha do ORM
+- [x] Escolha do ORM (Drizzle)
 - [ ] Prints das telas de referência (salvar em `referencias/`)
 - [ ] Documento de escopo: telas do cliente, painel SuperAdmin, modelo de dados, fluxo do Pix. Aprovar antes de implementar as funcionalidades.
