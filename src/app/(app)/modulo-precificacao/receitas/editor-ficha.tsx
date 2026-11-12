@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useState, useTransition } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -189,8 +196,25 @@ export function EditorFicha(props: PropsEditor) {
   >([]);
   const [novoPasso, setNovoPasso] = useState("");
 
+  // Ficha salva abre só para visualizar; "Editar" libera os campos. Ficha nova já abre editando.
+  const [editando, setEditando] = useState(!ficha);
+  const leitura = Boolean(ficha) && !editando;
+
   // Ficha nova só conta como alterada depois que algo é preenchido.
   const alterado = JSON.stringify(estado) !== salvo;
+  // Valor atual para a limpeza ao esconder a página (que roda com valores antigos).
+  const alteradoRef = useRef(alterado);
+  useEffect(() => {
+    alteradoRef.current = alterado;
+  }, [alterado]);
+
+  function cancelarEdicao() {
+    setEstado(JSON.parse(salvo) as Estado);
+    setErros({});
+    setErroGeral(undefined);
+    setNovoPasso("");
+    setEditando(false);
+  }
   const set = <K extends keyof Estado>(chave: K, valor: Estado[K]) => {
     setEstado((e) => ({ ...e, [chave]: valor }));
     setErros((x) => ({ ...x, [chave === "peso" ? "pesoTotalG" : chave]: "" }));
@@ -203,6 +227,7 @@ export function EditorFicha(props: PropsEditor) {
   useLayoutEffect(() => {
     return () => {
       setModal(null);
+      if (ficha && !alteradoRef.current) setEditando(false);
       if (!ficha) {
         const inicial = estadoInicial(tipoInicial, null);
         setEstado(inicial);
@@ -414,6 +439,7 @@ export function EditorFicha(props: PropsEditor) {
       setErros({});
       setErroGeral(undefined);
       setSalvo(JSON.stringify(estado));
+      setEditando(false);
       notificar.sucesso(
         ficha
           ? "Ficha atualizada"
@@ -446,6 +472,7 @@ export function EditorFicha(props: PropsEditor) {
   const totalVendas = usadoProdutos.reduce((s, u) => s + (u.preco ?? 0), 0);
   const pesoCampo = (
     <CampoNumeroFicha
+      leitura={leitura}
       id="peso"
       rotulo="Peso total"
       icone={Scale}
@@ -518,9 +545,30 @@ export function EditorFicha(props: PropsEditor) {
                   placeholder={`Nome d${tipo === "massa" ? "a" : "o"} ${info.singular}`}
                   aria-invalid={Boolean(erros.nome)}
                   autoFocus={!ficha}
-                  className="w-full border-b-2 border-transparent bg-transparent py-1 pr-7 text-2xl font-bold tracking-tight outline-none placeholder:text-muted-foreground/60 hover:border-border focus:border-highlight aria-invalid:border-destructive sm:text-3xl"
+                  readOnly={leitura}
+                  className={cn(
+                    "w-full border-b-2 border-transparent bg-transparent py-1 pr-9 text-2xl font-bold tracking-tight outline-none placeholder:text-muted-foreground/60 aria-invalid:border-destructive sm:text-3xl",
+                    !leitura && "hover:border-border focus:border-highlight",
+                  )}
                 />
-                <Pencil className="pointer-events-none absolute top-1/2 right-0 size-4 -translate-y-1/2 text-muted-foreground" />
+                {leitura ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditando(true);
+                      requestAnimationFrame(() =>
+                        document.getElementById("ficha-nome")?.focus(),
+                      );
+                    }}
+                    className="absolute top-1/2 right-0 -translate-y-1/2 rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    aria-label="Editar ficha"
+                    title="Editar"
+                  >
+                    <Pencil className="size-4" />
+                  </button>
+                ) : (
+                  <Pencil className="pointer-events-none absolute top-1/2 right-1.5 size-4 -translate-y-1/2 text-highlight-strong" />
+                )}
               </div>
               {erros.nome && (
                 <p className="mt-1 text-xs text-destructive">{erros.nome}</p>
@@ -541,12 +589,13 @@ export function EditorFicha(props: PropsEditor) {
                   type="button"
                   role="radio"
                   aria-checked={tipo === t}
+                  disabled={leitura}
                   onClick={() => trocarTipo(t)}
                   className={cn(
                     "rounded-lg px-4 py-2 text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                     tipo === t
                       ? "bg-highlight text-highlight-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground",
+                      : "text-muted-foreground enabled:hover:text-foreground disabled:opacity-50",
                   )}
                 >
                   {INFO_TIPO[t].titulo.slice(0, -1)}
@@ -566,6 +615,8 @@ export function EditorFicha(props: PropsEditor) {
                 value={estado.categoriaId}
                 onChange={(e) => set("categoriaId", e.target.value)}
                 aria-invalid={Boolean(erros.categoriaId)}
+                disabled={leitura}
+                className="disabled:cursor-default disabled:opacity-100"
               >
                 {/* Receita exige categoria; produto pode ficar sem. */}
                 <option value="" disabled={tipo !== "produto"}>
@@ -585,14 +636,16 @@ export function EditorFicha(props: PropsEditor) {
                 </p>
               )}
             </div>
-            <button
-              type="button"
-              onClick={() => setModal({ tipo: "categoria" })}
-              className="flex items-center gap-1 rounded text-xs font-semibold text-amber-700 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-            >
-              <Plus className="size-3.5" />
-              Nova categoria
-            </button>
+            {!leitura && (
+              <button
+                type="button"
+                onClick={() => setModal({ tipo: "categoria" })}
+                className="flex items-center gap-1 rounded text-xs font-semibold text-amber-700 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              >
+                <Plus className="size-3.5" />
+                Nova categoria
+              </button>
+            )}
           </div>
 
           {/* Campos editáveis: produto tem margens; receita, o tempo de preparo */}
@@ -604,6 +657,7 @@ export function EditorFicha(props: PropsEditor) {
           >
             {tipo !== "produto" && pesoCampo}
             <CampoNumeroFicha
+              leitura={leitura}
               id="rendimento"
               rotulo="Rendimento"
               icone={Utensils}
@@ -616,6 +670,7 @@ export function EditorFicha(props: PropsEditor) {
               <>
                 {pesoCampo}
                 <CampoNumeroFicha
+                  leitura={leitura}
                   id="margem"
                   rotulo="Margem"
                   icone={HandCoins}
@@ -632,6 +687,7 @@ export function EditorFicha(props: PropsEditor) {
                   </div>
                 </CampoNumeroFicha>
                 <CampoNumeroFicha
+                  leitura={leitura}
                   id="margemRevenda"
                   rotulo="Margem revenda"
                   icone={Store}
@@ -833,8 +889,16 @@ export function EditorFicha(props: PropsEditor) {
               </span>
             </p>
             <div className="flex flex-wrap gap-2">
-              {ficha && (
+              {leitura ? (
                 <>
+                  <Button
+                    type="button"
+                    size="lg"
+                    onClick={() => setEditando(true)}
+                  >
+                    <Pencil data-icon="inline-start" />
+                    Editar
+                  </Button>
                   <Button
                     type="button"
                     variant="outline"
@@ -863,17 +927,34 @@ export function EditorFicha(props: PropsEditor) {
                     Excluir
                   </Button>
                 </>
+              ) : (
+                <>
+                  {ficha && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="lg"
+                      onClick={cancelarEdicao}
+                      disabled={salvando}
+                    >
+                      <X data-icon="inline-start" />
+                      Cancelar
+                    </Button>
+                  )}
+                  <BotaoSalvar
+                    formId={FORM}
+                    alterado={alterado}
+                    salvando={salvando}
+                    className="hidden sm:inline-flex"
+                  />
+                </>
               )}
-              <BotaoSalvar
-                formId={FORM}
-                alterado={alterado}
-                salvando={salvando}
-                className="hidden sm:inline-flex"
-              />
             </div>
           </div>
           <div className="-mt-2 flex flex-col gap-1 text-xs sm:flex-row sm:justify-between">
-            {pendencias.length > 0 ? (
+            {leitura ? (
+              <span />
+            ) : pendencias.length > 0 ? (
               <p className="text-amber-700">
                 Preencha: {pendencias.join(", ")}.
               </p>
@@ -904,7 +985,9 @@ export function EditorFicha(props: PropsEditor) {
             Composição
           </h2>
           <p className="text-sm text-muted-foreground">
-            Adicione os itens; o custo é recalculado na hora.
+            {leitura
+              ? "Itens usados nesta ficha. Clique em Editar para alterar."
+              : "Adicione os itens; o custo é recalculado na hora."}
           </p>
         </div>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -954,8 +1037,9 @@ export function EditorFicha(props: PropsEditor) {
                             onClick={() =>
                               setModal({ tipo: "item", item: secao, indice })
                             }
-                            className="min-w-0 flex-1 rounded text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                            title="Alterar quantidade"
+                            disabled={leitura}
+                            className="min-w-0 flex-1 rounded text-left outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default"
+                            title={leitura ? undefined : "Alterar quantidade"}
                           >
                             <span className="block truncate text-sm font-medium">
                               {item.nome}
@@ -967,16 +1051,18 @@ export function EditorFicha(props: PropsEditor) {
                           <span className="shrink-0 text-sm tabular-nums">
                             {formatarMoedaPrecisa(item.custo)}
                           </span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => removerItem(indice)}
-                            aria-label={`Remover ${item.nome}`}
-                            className="text-muted-foreground hover:text-destructive"
-                          >
-                            <X />
-                          </Button>
+                          {!leitura && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => removerItem(indice)}
+                              aria-label={`Remover ${item.nome}`}
+                              className="text-muted-foreground hover:text-destructive"
+                            >
+                              <X />
+                            </Button>
+                          )}
                         </li>
                       ))}
                     </ul>
@@ -985,15 +1071,17 @@ export function EditorFicha(props: PropsEditor) {
                       {s.vazio}
                     </p>
                   )}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="mt-auto h-9 self-center"
-                    onClick={() => setModal({ tipo: "item", item: secao })}
-                  >
-                    <CirclePlus data-icon="inline-start" />
-                    Adicionar {r.singular}
-                  </Button>
+                  {!leitura && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="mt-auto h-9 self-center"
+                      onClick={() => setModal({ tipo: "item", item: secao })}
+                    >
+                      <CirclePlus data-icon="inline-start" />
+                      Adicionar {r.singular}
+                    </Button>
+                  )}
                 </div>
               </div>
             );
@@ -1027,21 +1115,23 @@ export function EditorFicha(props: PropsEditor) {
                       <span className="flex-1 pt-0.5 whitespace-pre-wrap">
                         {passo}
                       </span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() =>
-                          set(
-                            "passos",
-                            estado.passos.filter((_, i) => i !== n),
-                          )
-                        }
-                        aria-label={`Remover passo ${n + 1}`}
-                        className="text-muted-foreground hover:text-destructive"
-                      >
-                        <X />
-                      </Button>
+                      {!leitura && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() =>
+                            set(
+                              "passos",
+                              estado.passos.filter((_, i) => i !== n),
+                            )
+                          }
+                          aria-label={`Remover passo ${n + 1}`}
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          <X />
+                        </Button>
+                      )}
                     </li>
                   ))}
                 </ol>
@@ -1050,35 +1140,37 @@ export function EditorFicha(props: PropsEditor) {
                   Nenhum passo adicionado.
                 </p>
               )}
-              <div className="flex gap-2">
-                <label htmlFor="novo-passo" className="sr-only">
-                  Novo passo
-                </label>
-                <Input
-                  id="novo-passo"
-                  value={novoPasso}
-                  onChange={(e) => setNovoPasso(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      adicionarPasso();
-                    }
-                  }}
-                  maxLength={LIMITES.passo}
-                  placeholder="Descreva o passo e tecle Enter..."
-                  className="h-10 flex-1 scroll-mb-24 bg-muted/60"
-                />
-                <Button
-                  type="button"
-                  variant="highlight"
-                  size="icon-lg"
-                  className="size-10"
-                  onClick={adicionarPasso}
-                  aria-label="Adicionar passo"
-                >
-                  <Plus />
-                </Button>
-              </div>
+              {!leitura && (
+                <div className="flex gap-2">
+                  <label htmlFor="novo-passo" className="sr-only">
+                    Novo passo
+                  </label>
+                  <Input
+                    id="novo-passo"
+                    value={novoPasso}
+                    onChange={(e) => setNovoPasso(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        adicionarPasso();
+                      }
+                    }}
+                    maxLength={LIMITES.passo}
+                    placeholder="Descreva o passo e tecle Enter..."
+                    className="h-10 flex-1 scroll-mb-24 bg-muted/60"
+                  />
+                  <Button
+                    type="button"
+                    variant="highlight"
+                    size="icon-lg"
+                    className="size-10"
+                    onClick={adicionarPasso}
+                    aria-label="Adicionar passo"
+                  >
+                    <Plus />
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1169,7 +1261,7 @@ export function EditorFicha(props: PropsEditor) {
       )}
 
       {/* Celular: salvar fixo no rodapé */}
-      {alterado && (
+      {alterado && !leitura && (
         <>
           <div className="h-16 sm:hidden" aria-hidden />
           <div className="fixed inset-x-0 bottom-0 z-20 border-t bg-card/95 p-3 backdrop-blur sm:hidden">
@@ -1262,6 +1354,7 @@ function CampoNumeroFicha({
   dica,
   placeholder,
   pendente,
+  leitura,
   onAlterar,
   children,
 }: {
@@ -1274,6 +1367,8 @@ function CampoNumeroFicha({
   dica?: string;
   placeholder?: string;
   pendente?: boolean;
+  /** Visualização: mostra o valor sem permitir digitar. */
+  leitura?: boolean;
   onAlterar: (v: string) => void;
   children?: React.ReactNode;
 }) {
@@ -1281,11 +1376,13 @@ function CampoNumeroFicha({
     <div
       className={cn(
         "rounded-xl border p-3",
-        erro
-          ? "border-destructive/60 bg-destructive/5"
-          : pendente
-            ? "border-destructive/40"
-            : "border-highlight/50 bg-highlight-soft/30",
+        leitura
+          ? "border-transparent bg-muted/60"
+          : erro
+            ? "border-destructive/60 bg-destructive/5"
+            : pendente
+              ? "border-destructive/40"
+              : "border-highlight/50 bg-highlight-soft/30",
       )}
     >
       <label
@@ -1294,7 +1391,7 @@ function CampoNumeroFicha({
       >
         <Icone className="size-3.5" />
         {rotulo}
-        {pendente && (
+        {pendente && !leitura && (
           <span className="ml-auto rounded bg-destructive/10 px-1.5 py-px text-[10px] font-semibold text-destructive">
             Pendente
           </span>
@@ -1308,7 +1405,13 @@ function CampoNumeroFicha({
           inputMode="decimal"
           placeholder={placeholder ?? "0"}
           aria-invalid={Boolean(erro)}
-          className="w-full min-w-0 scroll-mb-24 border-b border-border bg-transparent py-0.5 text-xl font-bold tabular-nums outline-none placeholder:text-muted-foreground/50 focus:border-highlight"
+          readOnly={leitura}
+          className={cn(
+            "w-full min-w-0 scroll-mb-24 border-b bg-transparent py-0.5 text-xl font-bold tabular-nums outline-none placeholder:text-muted-foreground/50",
+            leitura
+              ? "border-transparent"
+              : "border-border focus:border-highlight",
+          )}
         />
         <span className="shrink-0 text-xs text-muted-foreground">{sufixo}</span>
       </div>

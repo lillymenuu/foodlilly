@@ -66,7 +66,7 @@ Em cada tela:
 
 ## Receitas e produtos (fichas técnicas)
 
-Pasta `src/app/(app)/modulo-precificacao/receitas/`. Rotas: central `/receitas`, listas `/receitas/massas|recheios|produtos`, nova `/receitas/[tipo]/nova`, ficha `/receitas/ficha/[id]` (editor sempre editável, com Salvar), categorias `/receitas/categorias` (abas massas, recheios, produtos e insumos; `?tipo=` abre a aba).
+Pasta `src/app/(app)/modulo-precificacao/receitas/`. Rotas: central `/receitas`, listas `/receitas/massas|recheios|produtos`, nova `/receitas/[tipo]/nova`, ficha `/receitas/ficha/[id]` (ficha salva abre só para visualizar, com campos travados; o botão "Editar" ou o lápis ao lado do nome libera a edição, com Cancelar/Salvar; ficha nova já abre editando), categorias `/receitas/categorias` (abas massas, recheios, produtos e insumos; `?tipo=` abre a aba).
 
 - Tabelas: `fichas` (tipo massa/recheio/produto), `ficha_itens` (composição: ingrediente, embalagem, receita, produto, mão de obra, equipamento; uma referência por linha, cascade ao excluir o item referenciado) e `categorias_ficha` (por tipo; ao excluir, as fichas vão para outra categoria escolhida ou ficam sem categoria).
 - **Custos não ficam gravados**: são calculados por `calculo.ts` (mesmo código no servidor e no navegador). Fórmulas conferidas com fichas reais da referência:
