@@ -42,7 +42,7 @@ const servicos: Servico[] = [
   {
     titulo: ["Precificação"],
     descricao: "Custos, receitas e preço de venda ideal.",
-    href: "/precificar",
+    href: "/modulo-precificacao",
     icone: Calculator,
     detalhe: CircleDollarSign,
   },
@@ -144,7 +144,7 @@ export default function DashboardPage() {
 
         <Button
           variant="highlight"
-          render={<Link href="/precificar" />}
+          render={<Link href="/modulo-precificacao" />}
           className="relative mt-5 md:absolute md:top-6 md:right-6 md:mt-0"
         >
           Calcular preço

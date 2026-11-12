@@ -8,10 +8,11 @@ const nextConfig: NextConfig = {
     return [
       { source: "/painel", destination: "/dashboard", permanent: false },
       { source: "/inicio", destination: "/dashboard", permanent: false },
-      { source: "/precificacao", destination: "/precificar", permanent: false },
-      { source: "/insumos", destination: "/precificar/insumos", permanent: false },
-      { source: "/receitas", destination: "/precificar/receitas", permanent: false },
-      { source: "/custos", destination: "/precificar/custeio", permanent: false },
+      { source: "/precificar/:caminho*", destination: "/modulo-precificacao/:caminho*", permanent: false },
+      { source: "/precificacao", destination: "/modulo-precificacao", permanent: false },
+      { source: "/insumos", destination: "/modulo-precificacao/insumos", permanent: false },
+      { source: "/receitas", destination: "/modulo-precificacao/receitas", permanent: false },
+      { source: "/custos", destination: "/modulo-precificacao/custeio", permanent: false },
     ];
   },
   partialPrefetching: true,

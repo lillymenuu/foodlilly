@@ -5,5 +5,5 @@ import { EmBreve } from "@/components/em-breve";
 export const metadata: Metadata = { title: "Insumos · foodlilly" };
 
 export default function Page() {
-  return <EmBreve href="/precificar/insumos" />;
+  return <EmBreve href="/modulo-precificacao/insumos" />;
 }

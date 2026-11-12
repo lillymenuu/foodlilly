@@ -45,7 +45,7 @@ Paleta definida em `src/app/globals.css` (tokens do tema; usar as classes, nunca
 - Inspiração das funcionalidades: menu da referência. Nomes de marca dela não são usados (ex.: "Deu Check" virou "Checklists").
 ## Telas com dados (padrão)
 
-Referência: `src/app/(app)/precificar/dados-de-entrada/`.
+Referência: `src/app/(app)/modulo-precificacao/dados-de-entrada/`.
 
 - `campos.ts`: definição dos campos (rótulo, dica, unidade, padrão, limites). Tela, validação e banco leem daqui.
 - `page.tsx` (Server Component): `<Suspense>` + componente async que chama `await connection()` e lê o banco (exigência do Cache Components).

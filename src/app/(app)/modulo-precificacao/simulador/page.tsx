@@ -5,5 +5,5 @@ import { EmBreve } from "@/components/em-breve";
 export const metadata: Metadata = { title: "Simulador de promoções · foodlilly" };
 
 export default function Page() {
-  return <EmBreve href="/precificar/simulador" />;
+  return <EmBreve href="/modulo-precificacao/simulador" />;
 }

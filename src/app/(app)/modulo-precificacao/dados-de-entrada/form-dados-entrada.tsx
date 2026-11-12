@@ -391,7 +391,7 @@ function ModalSucesso({
             variant="highlight"
             size="lg"
             className="h-11 flex-1"
-            render={<Link href="/precificar" />}
+            render={<Link href="/modulo-precificacao" />}
           >
             Voltar para Precificar
             <ArrowRight data-icon="inline-end" />
