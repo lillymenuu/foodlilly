@@ -208,7 +208,7 @@ export function ListaFichas({ tipo, itens, categorias }: { tipo: TipoFicha; iten
         <section className="flex flex-col gap-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
-              Organize {tipo === "massa" ? "suas massas" : `seus ${info.plural}`} em categorias. Excluir uma categoria não apaga nada: os itens ficam sem categoria.
+              Organize {tipo === "massa" ? "suas massas" : `seus ${info.plural}`} em categorias. Excluir uma categoria não apaga nada: você escolhe para onde os itens vão.
             </p>
             <Button variant="highlight" size="lg" className="h-10 shrink-0" onClick={() => setModal({ tipo: "nova" })}>
               <Plus data-icon="inline-start" />
@@ -264,6 +264,7 @@ export function ListaFichas({ tipo, itens, categorias }: { tipo: TipoFicha; iten
         <ModalExcluirCategoriaFicha
           tipo={tipo}
           categoria={modal.categoria}
+          categorias={categorias}
           onFechar={() => setModal(null)}
           onConcluido={(titulo, descricao) => {
             setModal(null);

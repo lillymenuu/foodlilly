@@ -66,9 +66,9 @@ Em cada tela:
 
 ## Receitas e produtos (fichas técnicas)
 
-Pasta `src/app/(app)/modulo-precificacao/receitas/`. Rotas: central `/receitas`, listas `/receitas/massas|recheios|produtos`, nova `/receitas/[tipo]/nova`, ficha `/receitas/ficha/[id]` (editor sempre editável, com Salvar).
+Pasta `src/app/(app)/modulo-precificacao/receitas/`. Rotas: central `/receitas`, listas `/receitas/massas|recheios|produtos`, nova `/receitas/[tipo]/nova`, ficha `/receitas/ficha/[id]` (editor sempre editável, com Salvar), categorias `/receitas/categorias` (abas massas, recheios, produtos e insumos; `?tipo=` abre a aba).
 
-- Tabelas: `fichas` (tipo massa/recheio/produto), `ficha_itens` (composição: ingrediente, embalagem, receita, produto, mão de obra, equipamento; uma referência por linha, cascade ao excluir o item referenciado) e `categorias_ficha` (por tipo; excluir deixa as fichas sem categoria).
+- Tabelas: `fichas` (tipo massa/recheio/produto), `ficha_itens` (composição: ingrediente, embalagem, receita, produto, mão de obra, equipamento; uma referência por linha, cascade ao excluir o item referenciado) e `categorias_ficha` (por tipo; ao excluir, as fichas vão para outra categoria escolhida ou ficam sem categoria).
 - **Custos não ficam gravados**: são calculados por `calculo.ts` (mesmo código no servidor e no navegador). Fórmulas conferidas com fichas reais da referência:
   - mão de obra = salário ÷ (dias × horas × 60) × minutos; equipamento elétrico = kW × h × R$/kWh; a gás = kg/h × h × (R$ botijão ÷ kg)
   - insumo = quantidade × custo real da unidade (com perda); receita/produto vinculado = gramas ÷ peso total × custo total

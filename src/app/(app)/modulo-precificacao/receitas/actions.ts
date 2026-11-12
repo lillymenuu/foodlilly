@@ -283,16 +283,42 @@ export async function renomearCategoriaFicha(categoriaId: string, nome: string):
   return { ok: true };
 }
 
-/** Exclui a categoria; as fichas dela ficam "Sem categoria". */
-export async function excluirCategoriaFicha(categoriaId: string): Promise<ResultadoSalvar> {
+/**
+ * Exclui a categoria. As fichas dela vão para `destinoId` (outra categoria
+ * do mesmo tipo) ou ficam "Sem categoria" quando o destino é nulo.
+ */
+export async function excluirCategoriaFicha(categoriaId: string, destinoId: string | null = null): Promise<ResultadoSalvar> {
   const negocioId = await obterNegocioAtualId();
-  if (!id.safeParse(categoriaId).success) return { ok: false, mensagem: "Categoria não encontrada." };
+  const naoEncontrada: ResultadoSalvar = { ok: false, mensagem: "Categoria não encontrada." };
+  if (!id.safeParse(categoriaId).success) return naoEncontrada;
   try {
-    const excluidas = await db
-      .delete(categoriasFicha)
+    const [categoria] = await db
+      .select()
+      .from(categoriasFicha)
       .where(and(eq(categoriasFicha.id, categoriaId), eq(categoriasFicha.negocioId, negocioId)))
-      .returning({ id: categoriasFicha.id });
-    if (!excluidas.length) return { ok: false, mensagem: "Categoria não encontrada." };
+      .limit(1);
+    if (!categoria) return naoEncontrada;
+
+    if (destinoId) {
+      if (!id.safeParse(destinoId).success || destinoId === categoriaId) return { ok: false, mensagem: "Escolha um destino válido." };
+      const [destino] = await db
+        .select({ id: categoriasFicha.id })
+        .from(categoriasFicha)
+        .where(and(eq(categoriasFicha.id, destinoId), eq(categoriasFicha.negocioId, negocioId), eq(categoriasFicha.tipo, categoria.tipo)))
+        .limit(1);
+      if (!destino) return { ok: false, mensagem: "Escolha um destino válido." };
+      // Lote único (transação): move as fichas e exclui a categoria.
+      await db.batch([
+        db
+          .update(fichas)
+          .set({ categoriaId: destinoId })
+          .where(and(eq(fichas.categoriaId, categoriaId), eq(fichas.negocioId, negocioId))),
+        db.delete(categoriasFicha).where(and(eq(categoriasFicha.id, categoriaId), eq(categoriasFicha.negocioId, negocioId))),
+      ]);
+    } else {
+      // Sem destino: a chave estrangeira deixa as fichas sem categoria.
+      await db.delete(categoriasFicha).where(and(eq(categoriasFicha.id, categoriaId), eq(categoriasFicha.negocioId, negocioId)));
+    }
   } catch (erro) {
     console.error("Erro ao excluir categoria de ficha", erro);
     return { ok: false, mensagem: "Não foi possível excluir. Tente novamente." };

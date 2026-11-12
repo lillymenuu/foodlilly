@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 
 import { CampoModal, ModalExcluir, ModalFormulario } from "@/components/cadastro";
+import { SelectNativo } from "@/components/cadastro/select-nativo";
 import { Input } from "@/components/ui/input";
 import { plural } from "@/lib/texto";
 
@@ -88,29 +89,50 @@ export function ModalCategoriaFicha({
 export function ModalExcluirCategoriaFicha({
   tipo,
   categoria,
+  categorias,
   onFechar,
   onConcluido,
 }: {
   tipo: TipoFicha;
   categoria: CategoriaFicha;
+  /** Todas as categorias do tipo, para escolher o destino dos itens. */
+  categorias: CategoriaFicha[];
   onFechar: () => void;
   onConcluido: (titulo: string, descricao: string) => void;
 }) {
   const info = INFO_TIPO[tipo];
+  const [destino, setDestino] = useState("");
+  const outras = categorias.filter((c) => c.id !== categoria.id).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+  const temItens = categoria.fichas > 0;
+  const nomeDestino = outras.find((c) => c.id === destino)?.nome;
+
   return (
     <ModalExcluir
       item="categoria"
       genero="f"
       nome={categoria.nome}
       consequencia={
-        categoria.fichas
-          ? `${plural(categoria.fichas, info.singular, info.plural)} desta categoria ${categoria.fichas === 1 ? "ficará" : "ficarão"} sem categoria (nada é apagado).`
+        temItens
+          ? `${plural(categoria.fichas, info.singular, info.plural)} desta categoria ${categoria.fichas === 1 ? "irá" : "irão"} para ${nomeDestino ? `"${nomeDestino}"` : "Sem categoria"}. Nada é apagado.`
           : `Nenhum${info.singular === "massa" ? "a" : ""} ${info.singular} usa esta categoria.`
       }
       detalhes={[{ rotulo: info.titulo, valor: String(categoria.fichas) }]}
-      excluir={() => excluirCategoriaFicha(categoria.id)}
+      excluir={() => excluirCategoriaFicha(categoria.id, temItens && destino ? destino : null)}
       onFechar={onFechar}
       onConcluido={onConcluido}
-    />
+    >
+      {temItens && (
+        <CampoModal id="categoria-ficha-destino" rotulo="Mover itens para">
+          <SelectNativo id="categoria-ficha-destino" value={destino} onChange={(e) => setDestino(e.target.value)}>
+            <option value="">Sem categoria</option>
+            {outras.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nome}
+              </option>
+            ))}
+          </SelectNativo>
+        </CampoModal>
+      )}
+    </ModalExcluir>
   );
 }

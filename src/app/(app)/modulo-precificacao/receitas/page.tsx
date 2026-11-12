@@ -2,12 +2,12 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
-import { ChevronRight, FileText, Soup, Sparkles, type LucideIcon } from "lucide-react";
+import { ChevronRight, FileText, Soup, Sparkles, Tags, type LucideIcon } from "lucide-react";
 import { and, count, eq } from "drizzle-orm";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
-import { fichas } from "@/db/schema";
+import { categoriasFicha, categoriasInsumo, fichas } from "@/db/schema";
 import { obterNegocioAtualId } from "@/lib/negocio-atual";
 import { plural } from "@/lib/texto";
 
@@ -40,12 +40,37 @@ export default function Page() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-sm font-semibold text-muted-foreground">Ferramentas</h2>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <Suspense
+            fallback={
+              <Card href={`${BASE}/categorias`} icone={Tags} titulo="Categorias" descricao="Organize massas, recheios, produtos e insumos." />
+            }
+          >
+            <CardCategorias />
+          </Suspense>
           <Card href="/modulo-precificacao/simulador" icone={Sparkles} titulo="Simulador de promoções" descricao="Monte combos e descontos sem perder margem." />
           <Card href="/modulo-precificacao/relatorios" icone={FileText} titulo="Relatórios" descricao="Margens, custos e preços em gráficos." />
         </div>
       </section>
     </>
+  );
+}
+
+async function CardCategorias() {
+  await connection();
+  const negocioId = await obterNegocioAtualId();
+  const [[fichasCat], [insumosCat]] = await Promise.all([
+    db.select({ total: count() }).from(categoriasFicha).where(eq(categoriasFicha.negocioId, negocioId)),
+    db.select({ total: count() }).from(categoriasInsumo).where(eq(categoriasInsumo.negocioId, negocioId)),
+  ]);
+  return (
+    <Card
+      href={`${BASE}/categorias`}
+      icone={Tags}
+      titulo="Categorias"
+      descricao="Organize massas, recheios, produtos e insumos."
+      selo={plural(fichasCat.total + insumosCat.total, "categoria", "categorias")}
+    />
   );
 }
 
