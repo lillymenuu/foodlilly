@@ -11,7 +11,6 @@ import {
   Cog,
   Copy,
   HandCoins,
-  ImagePlus,
   ListOrdered,
   LoaderCircle,
   Package,
@@ -272,25 +271,21 @@ export function EditorFicha(props: PropsEditor) {
         }));
     }
     if (item === "mao_obra") {
-      return [...props.funcionarios]
-        .sort(compararNome)
-        .map((f) => ({
-          id: f.id,
-          nome: f.nome,
-          grupo: "Funcionários",
-          unidade: "min",
-          detalhe: `${formatarMoedaPrecisa(f.custoMinuto * 60)}/hora`,
-        }));
-    }
-    return [...props.equipamentos]
-      .sort(compararNome)
-      .map((e) => ({
-        id: e.id,
-        nome: e.nome,
-        grupo: "Equipamentos",
+      return [...props.funcionarios].sort(compararNome).map((f) => ({
+        id: f.id,
+        nome: f.nome,
+        grupo: "Funcionários",
         unidade: "min",
-        detalhe: e.detalhe,
+        detalhe: `${formatarMoedaPrecisa(f.custoMinuto * 60)}/hora`,
       }));
+    }
+    return [...props.equipamentos].sort(compararNome).map((e) => ({
+      id: e.id,
+      nome: e.nome,
+      grupo: "Equipamentos",
+      unidade: "min",
+      detalhe: e.detalhe,
+    }));
   }
 
   function confirmarItem(
@@ -433,22 +428,7 @@ export function EditorFicha(props: PropsEditor) {
   return (
     <form id={FORM} onSubmit={salvar} noValidate className="contents">
       {/* Cabeçalho: nome, categoria e números */}
-      <section className="grid gap-5 rounded-2xl bg-card p-4 ring-1 ring-foreground/10 sm:p-6 lg:grid-cols-[15rem_minmax(0,1fr)]">
-        {/* Imagem (envio de fotos virá depois) + selo de classificação */}
-        <aside className="relative hidden flex-col items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-primary to-primary-strong p-6 text-center text-primary-foreground/40 lg:flex">
-          <span
-            className={cn(
-              "absolute top-3 left-3 rounded-full px-2.5 py-1 text-xs font-semibold",
-              selo.classe,
-            )}
-            title={selo.dica}
-          >
-            {selo.rotulo}
-          </span>
-          <ImagePlus className="size-12" />
-          <span className="text-sm font-medium">Imagem em breve</span>
-        </aside>
-
+      <section className="rounded-2xl bg-card p-4 ring-1 ring-foreground/10 sm:p-6">
         <div className="flex min-w-0 flex-col gap-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
             <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-highlight text-highlight-foreground">
@@ -459,7 +439,7 @@ export function EditorFicha(props: PropsEditor) {
                 Ficha técnica · {info.singular}
                 <span
                   className={cn(
-                    "rounded-full px-2 py-0.5 text-[10px] tracking-normal normal-case lg:hidden",
+                    "rounded-full px-2 py-0.5 text-[10px] tracking-normal normal-case",
                     selo.classe,
                   )}
                   title={selo.dica}
