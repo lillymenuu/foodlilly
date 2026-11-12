@@ -14,13 +14,17 @@ export function generateStaticParams() {
   return Object.keys(SEGMENTOS).map((tipo) => ({ tipo }));
 }
 
-export async function generateMetadata({ params }: PageProps<"/modulo-precificacao/receitas/[tipo]">): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: PageProps<"/modulo-precificacao/receitas/[tipo]">): Promise<Metadata> {
   const { tipo } = await params;
   const t = SEGMENTOS[tipo as Segmento];
   return { title: t ? `${INFO_TIPO[t].titulo} · foodlilly` : "foodlilly" };
 }
 
-export default function Page({ params }: PageProps<"/modulo-precificacao/receitas/[tipo]">) {
+export default function Page({
+  params,
+}: PageProps<"/modulo-precificacao/receitas/[tipo]">) {
   // O tipo da URL é lido dentro do <Suspense>, para a navegação ser instantânea.
   return (
     <Suspense fallback={<Carregando />}>
@@ -29,12 +33,19 @@ export default function Page({ params }: PageProps<"/modulo-precificacao/receita
   );
 }
 
-async function Conteudo({ params }: { params: PageProps<"/modulo-precificacao/receitas/[tipo]">["params"] }) {
+async function Conteudo({
+  params,
+}: {
+  params: PageProps<"/modulo-precificacao/receitas/[tipo]">["params"];
+}) {
   const tipo = SEGMENTOS[(await params).tipo as Segmento];
   if (!tipo) notFound();
   await connection(); // dados do negócio: sempre lidos na hora
   const negocioId = await obterNegocioAtualId();
-  const [{ fichas, resultados }, categorias] = await Promise.all([carregarTudo(negocioId), listarCategoriasFicha(negocioId, tipo)]);
+  const [{ fichas, resultados }, categorias] = await Promise.all([
+    carregarTudo(negocioId),
+    listarCategoriasFicha(negocioId, tipo),
+  ]);
   const itens: ItemLista[] = fichas
     .filter((f) => f.tipo === tipo)
     .map((f) => {
@@ -50,6 +61,7 @@ async function Conteudo({ params }: { params: PageProps<"/modulo-precificacao/re
         custoPorcao: r.custoPorcao,
         preco: r.preco?.valido ? r.preco.preco : null,
         margem: f.margem,
+        marketplace: r.preco?.valido ? r.preco.marketplace : [],
         atualizadoEm: f.atualizadoEm,
       };
     });
