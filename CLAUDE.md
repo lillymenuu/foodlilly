@@ -14,7 +14,30 @@ Referência de funcionalidades: plataforma.foodwise.app.br. Usar apenas como ins
 ## Stack
 
 - **Next.js 16** (App Router, pasta `src/`), **TypeScript**, **Tailwind CSS 4**
-- **UI**: shadcn/ui (sugerido), com gráficos do shadcn ou do Tremor no dashboard do SuperAdmin
+- **UI**: shadcn/ui (preset `base-nova`, sobre **Base UI**, não Radix: componentes usam a prop `render={<Link href="..." />}` em vez de `asChild`), ícones `lucide-react`, fonte Geist. Gráficos do shadcn ou do Tremor no dashboard do SuperAdmin
+  - Adicionar componentes com `npx shadcn@latest add <nome>` e traduzir para pt-BR os textos em inglês que vierem neles (sr-only, aria-label)
+
+## Identidade visual
+
+Paleta definida em `src/app/globals.css` (tokens do tema; usar as classes, nunca hex soltos no código):
+
+| Token | Cor | Uso |
+|---|---|---|
+| `primary` / `primary-strong` / `primary-soft` | `#143A5D` / `#0C3051` / `#DDE5EE` | Marinho: menu lateral, botões principais, card de destaque |
+| `highlight` / `highlight-strong` / `highlight-soft` | `#F79C18` / `#E0811B` / `#FDECCD` | Laranja âmbar: ações de destaque (`<Button variant="highlight">`), ícones, avisos suaves |
+| `background` / `card` | `#E8EBF0` / `#FFFFFF` | Fundo da página / cards |
+| `foreground` / `muted-foreground` | `#1E2A3A` / `#5B6B7F` | Texto / texto secundário |
+| `chart-1..5` | marinho, laranja, azul, laranja claro, cinza | Gráficos (marinho × laranja para comparar duas séries) |
+
+- **Contraste:** laranja sempre com texto marinho (`text-highlight-foreground`), nunca com texto branco (2,2:1, reprova). Laranja sobre branco só em ícones, nunca em texto.
+- **Modo escuro:** fica para depois (o bloco `.dark` foi removido do CSS).
+
+## Estrutura das telas
+
+- `src/app/page.tsx`: página pública (por enquanto, "em construção" com link para a prévia)
+- `src/app/(app)/`: área logada do cliente, com `layout.tsx` (menu lateral `src/components/app-sidebar.tsx` + cabeçalho)
+  - `painel/` tem dados **de exemplo** fixos no código; as demais telas usam `<EmBreve>` até o escopo ser aprovado
+- Área do SuperAdmin: a criar (ex.: `src/app/(admin)/admin/`)
 - **Banco**: PostgreSQL 18 no **Neon**, projeto `dblillyfood` (banco `neondb`), criado pela integração Vercel ↔ Neon e conectado ao projeto `foodlilly` na Vercel. Acesso pela variável `DATABASE_URL` (connection string *pooled*). A integração também cria `DATABASE_URL_UNPOOLED` (conexão direta, útil para migrations).
 - **ORM**: **Drizzle** com o driver `@neondatabase/serverless` (modo HTTP, `drizzle-orm/neon-http`)
   - Conexão em `src/db/index.ts` (importa `server-only`, nunca usar em Client Components); tabelas em `src/db/schema.ts`
