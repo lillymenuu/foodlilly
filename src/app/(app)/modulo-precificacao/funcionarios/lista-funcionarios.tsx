@@ -4,14 +4,13 @@ import { useState } from "react";
 import { CircleDollarSign, Users, Wallet } from "lucide-react";
 
 import {
-  AvisoSucesso,
   BannerCadastro,
   CabecalhoLista,
   CardCadastro,
   GradeCadastro,
-  useMensagemSucesso,
   VazioCadastro,
 } from "@/components/cadastro";
+import { notificar } from "@/components/notificacoes";
 import { formatarMoeda } from "@/lib/numero-br";
 import { compararNome, iniciais, normalizar, plural } from "@/lib/texto";
 
@@ -68,7 +67,6 @@ export function ListaFuncionarios({ funcionarios }: { funcionarios: Funcionario[
   const [busca, setBusca] = useState("");
   const [ordem, setOrdem] = useState<Ordem>("nome-asc");
   const [modal, setModal] = useState<Modal>(null);
-  const [mensagem, mostrarMensagem] = useMensagemSucesso();
 
   const folha = funcionarios.reduce((s, f) => s + f.salario, 0);
   const media = funcionarios.length ? folha / funcionarios.length : 0;
@@ -78,9 +76,9 @@ export function ListaFuncionarios({ funcionarios }: { funcionarios: Funcionario[
     ordem,
   );
 
-  function concluir(texto: string) {
+  function concluir(titulo: string, descricao: string) {
     setModal(null);
-    mostrarMensagem(texto);
+    notificar.sucesso(titulo, descricao);
   }
 
   return (
@@ -102,8 +100,6 @@ export function ListaFuncionarios({ funcionarios }: { funcionarios: Funcionario[
         onOrdem={setOrdem}
         onNovo={() => setModal({ tipo: "novo" })}
       />
-
-      <AvisoSucesso mensagem={mensagem} />
 
       <section className="flex flex-col gap-4">
         <CabecalhoLista

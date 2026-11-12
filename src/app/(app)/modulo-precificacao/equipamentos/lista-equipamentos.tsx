@@ -5,14 +5,13 @@ import { Cog, Flame, Zap } from "lucide-react";
 import { cn } from "cn";
 
 import {
-  AvisoSucesso,
   BannerCadastro,
   CabecalhoLista,
   CardCadastro,
   GradeCadastro,
-  useMensagemSucesso,
   VazioCadastro,
 } from "@/components/cadastro";
+import { notificar } from "@/components/notificacoes";
 import { compararNome, normalizar, plural } from "@/lib/texto";
 
 import { ModalEquipamento, ModalExcluirEquipamento } from "./modais";
@@ -50,7 +49,6 @@ export function ListaEquipamentos({ equipamentos }: { equipamentos: Equipamento[
   const [busca, setBusca] = useState("");
   const [ordem, setOrdem] = useState<Ordem>("tipo");
   const [modal, setModal] = useState<Modal>(null);
-  const [mensagem, mostrarMensagem] = useMensagemSucesso();
 
   const eletricos = equipamentos.filter((e) => e.tipo === "eletrico").length;
   const termo = normalizar(busca);
@@ -59,9 +57,9 @@ export function ListaEquipamentos({ equipamentos }: { equipamentos: Equipamento[
     ordem,
   );
 
-  function concluir(texto: string) {
+  function concluir(titulo: string, descricao: string) {
     setModal(null);
-    mostrarMensagem(texto);
+    notificar.sucesso(titulo, descricao);
   }
 
   return (
@@ -83,8 +81,6 @@ export function ListaEquipamentos({ equipamentos }: { equipamentos: Equipamento[
         onOrdem={setOrdem}
         onNovo={() => setModal({ tipo: "novo" })}
       />
-
-      <AvisoSucesso mensagem={mensagem} />
 
       <section className="flex flex-col gap-4">
         <CabecalhoLista

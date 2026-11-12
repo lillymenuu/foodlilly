@@ -1,9 +1,8 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import {
   ArrowUpDown,
-  CircleCheck,
   CirclePlus,
   LoaderCircle,
   Pencil,
@@ -233,28 +232,6 @@ export function VazioCadastro({
   );
 }
 
-/** Mensagem de sucesso que some sozinha depois de alguns segundos. */
-export function useMensagemSucesso() {
-  const [mensagem, setMensagem] = useState<string>();
-  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  function mostrar(texto: string) {
-    setMensagem(texto);
-    clearTimeout(timer.current);
-    timer.current = setTimeout(() => setMensagem(undefined), 4000);
-  }
-  return [mensagem, mostrar] as const;
-}
-
-export function AvisoSucesso({ mensagem }: { mensagem?: string }) {
-  if (!mensagem) return null;
-  return (
-    <p role="status" className="flex items-center gap-2 rounded-xl bg-success/10 px-4 py-3 text-sm text-success">
-      <CircleCheck className="size-4 shrink-0" />
-      {mensagem}
-    </p>
-  );
-}
-
 /** Remove o erro de um campo: `setErros(semErro("nome"))`. */
 export const semErro = (chave: string) => (erros: Record<string, string>) => {
   if (!(chave in erros)) return erros;
@@ -376,7 +353,7 @@ export function ModalExcluir({
   detalhes: { rotulo: string; valor: string }[];
   excluir: () => Promise<ResultadoSalvar>;
   onFechar: () => void;
-  onConcluido: (mensagem: string) => void;
+  onConcluido: (titulo: string, descricao: string) => void;
 }) {
   const [erro, setErro] = useState<string>();
   const [excluindo, startTransition] = useTransition();
@@ -384,7 +361,7 @@ export function ModalExcluir({
   function confirmar() {
     startTransition(async () => {
       const resultado = await excluir();
-      if (resultado.ok) onConcluido(`"${nome}" foi excluído.`);
+      if (resultado.ok) onConcluido(`${item[0].toUpperCase()}${item.slice(1)} excluído`, nome);
       else setErro(resultado.mensagem);
     });
   }

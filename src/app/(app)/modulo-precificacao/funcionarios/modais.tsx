@@ -18,7 +18,7 @@ export function ModalFuncionario({
 }: {
   funcionario?: Funcionario;
   onFechar: () => void;
-  onConcluido: (mensagem: string) => void;
+  onConcluido: (titulo: string, descricao: string) => void;
 }) {
   const [nome, setNome] = useState(funcionario?.nome ?? "");
   const [salario, setSalario] = useState(paraTexto(funcionario?.salario, 2));
@@ -42,7 +42,7 @@ export function ModalFuncionario({
         ? await editarFuncionario(funcionario.id, dados)
         : await criarFuncionario(dados);
       if (resultado.ok) {
-        onConcluido(funcionario ? `"${dados.nome}" foi atualizado.` : `"${dados.nome}" foi adicionado.`);
+        onConcluido(funcionario ? "Funcionário atualizado" : "Funcionário adicionado", dados.nome);
       } else {
         setErros(resultado.erros ?? {});
         setErroGeral(resultado.mensagem);
@@ -112,7 +112,7 @@ export function ModalExcluirFuncionario({
 }: {
   funcionario: Funcionario;
   onFechar: () => void;
-  onConcluido: (mensagem: string) => void;
+  onConcluido: (titulo: string, descricao: string) => void;
 }) {
   return (
     <ModalExcluir

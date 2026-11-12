@@ -20,7 +20,7 @@ export function ModalEquipamento({
 }: {
   equipamento?: Equipamento;
   onFechar: () => void;
-  onConcluido: (mensagem: string) => void;
+  onConcluido: (titulo: string, descricao: string) => void;
 }) {
   const [nome, setNome] = useState(equipamento?.nome ?? "");
   const [gas, setGas] = useState(equipamento?.tipo === "gas");
@@ -50,7 +50,7 @@ export function ModalEquipamento({
         ? await editarEquipamento(equipamento.id, dados)
         : await criarEquipamento(dados);
       if (resultado.ok) {
-        onConcluido(equipamento ? `"${dados.nome}" foi atualizado.` : `"${dados.nome}" foi adicionado.`);
+        onConcluido(equipamento ? "Equipamento atualizado" : "Equipamento adicionado", dados.nome);
       } else {
         setErros(resultado.erros ?? {});
         setErroGeral(resultado.mensagem);
@@ -144,7 +144,7 @@ export function ModalExcluirEquipamento({
 }: {
   equipamento: Equipamento;
   onFechar: () => void;
-  onConcluido: (mensagem: string) => void;
+  onConcluido: (titulo: string, descricao: string) => void;
 }) {
   return (
     <ModalExcluir
