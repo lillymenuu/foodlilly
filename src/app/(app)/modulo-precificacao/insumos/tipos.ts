@@ -76,9 +76,11 @@ export const CATEGORIAS_PADRAO: { nome: string; sistema?: boolean }[] = [
 
 const numero = (v: number, casas = 3) => v.toLocaleString("pt-BR", { maximumFractionDigits: casas });
 
-/** "1.000 g", "9 unidades", "1 unidade". */
-export function formatarVolume(volume: number, unidade: Unidade) {
-  if (unidade === "unidade") return `${numero(volume)} ${volume === 1 ? "unidade" : "unidades"}`;
+/** "1.000 g", "9 unidades", "1 unidade" (curto: "9 un."). */
+export function formatarVolume(volume: number, unidade: Unidade, curto = false) {
+  if (unidade === "unidade") {
+    return curto ? `${numero(volume)} un.` : `${numero(volume)} ${volume === 1 ? "unidade" : "unidades"}`;
+  }
   return `${numero(volume)} ${unidade}`;
 }
 
@@ -96,5 +98,5 @@ export function custosUnitarios(i: Pick<Insumo, "volume" | "custo" | "perda">) {
 /** Preço real (com perda) na unidade de exibição: "Valor/kg", "Valor/unidade". */
 export function valorExibicao(i: Pick<Insumo, "volume" | "custo" | "perda" | "unidade">) {
   const { unidade, fator } = EXIBICAO[i.unidade];
-  return { rotulo: `Valor/${unidade}`, valor: custosUnitarios(i).comPerda * fator };
+  return { rotulo: `Valor/${unidade === "unidade" ? "un." : unidade}`, valor: custosUnitarios(i).comPerda * fator };
 }

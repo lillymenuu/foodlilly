@@ -44,6 +44,12 @@ export function mascaraMoeda(texto: string) {
 export const formatarMoeda = (valor: number) =>
   valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+/** Como formatarMoeda, mas com 4 casas para valores pequenos (R$ 0,0012 em vez de R$ 0,00). */
+export const formatarMoedaPrecisa = (valor: number) =>
+  valor > 0 && valor < 0.1
+    ? valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 4, maximumFractionDigits: 4 })
+    : formatarMoeda(valor);
+
 export const formatarPercentual = (fracao: number, casas = 1) =>
   (fracao * 100).toLocaleString("pt-BR", {
     minimumFractionDigits: casas,

@@ -31,9 +31,9 @@ function Carregando() {
     <>
       <Skeleton className="h-56 rounded-2xl" />
       <Skeleton className="h-20 rounded-2xl" />
-      <div className="grid gap-3 min-[440px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {Array.from({ length: 4 }, (_, i) => (
-          <Skeleton key={i} className="h-64 rounded-2xl" />
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 min-[1100px]:grid-cols-4 xl:grid-cols-5">
+        {Array.from({ length: 5 }, (_, i) => (
+          <Skeleton key={i} className="h-56 rounded-2xl" />
         ))}
       </div>
     </>

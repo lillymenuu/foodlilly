@@ -7,7 +7,7 @@ import { cn } from "cn";
 import { BannerCadastro, CabecalhoLista, VazioCadastro } from "@/components/cadastro";
 import { notificar } from "@/components/notificacoes";
 import { Button } from "@/components/ui/button";
-import { formatarMoeda } from "@/lib/numero-br";
+import { formatarMoeda, formatarMoedaPrecisa } from "@/lib/numero-br";
 import { compararNome, normalizar, plural } from "@/lib/texto";
 
 import { ModalCategoria, ModalExcluirCategoria } from "./modais-categoria";
@@ -147,7 +147,7 @@ export function TelaInsumos({ insumos, categorias }: { insumos: Insumo[]; catego
               info={termo ? `${visiveis.length} de ${insumos.length}` : plural(insumos.length, "insumo", "insumos")}
             />
             {visiveis.length ? (
-              <ul className="grid gap-3 min-[440px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 min-[1100px]:grid-cols-4 xl:grid-cols-5">
                 {visiveis.map((i) => (
                   <CardInsumo
                     key={i.id}
@@ -229,46 +229,57 @@ function CardInsumo({
   onExcluir: () => void;
 }) {
   const { rotulo, valor } = valorExibicao(i);
+  const volume = formatarVolume(i.volume, i.unidade, true);
   return (
-    <li className="flex flex-col items-center gap-3 rounded-2xl bg-card p-4 text-center ring-1 ring-foreground/10 transition-shadow hover:shadow-md">
-      <span className="max-w-full truncate rounded-full bg-primary-soft px-2.5 py-0.5 text-[10px] font-semibold tracking-wide text-primary uppercase">
+    <li
+      className={cn(
+        "flex flex-col items-center gap-2 rounded-2xl bg-card p-3 text-center ring-1 ring-foreground/10",
+        // Ao passar o mouse (ou focar um botão): sobe, ganha sombra e borda laranja.
+        "transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-1 hover:shadow-lg hover:ring-2 hover:ring-highlight/70",
+        "focus-within:-translate-y-1 focus-within:shadow-lg motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:focus-within:translate-y-0",
+      )}
+    >
+      <span className="max-w-full truncate rounded-full bg-primary-soft px-2 py-0.5 text-[9px] font-semibold tracking-wide text-primary uppercase">
         {categoria}
       </span>
-      <h3 className="line-clamp-2 min-h-10 text-sm font-semibold tracking-wide uppercase" title={i.nome}>
+      <h3 className="line-clamp-2 flex min-h-8 items-center text-xs leading-tight font-semibold tracking-wide uppercase" title={i.nome}>
         {i.nome}
       </h3>
       <div>
-        <p className="text-2xl font-bold tabular-nums">{formatarMoeda(i.custo)}</p>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xl font-bold tabular-nums">{formatarMoeda(i.custo)}</p>
+        <p className="text-[11px] text-muted-foreground">
           Total pago
           {i.perda > 0 && (
-            <span className="ml-1.5 rounded bg-highlight-soft px-1.5 py-px font-medium text-highlight-foreground">
+            <span className="ml-1 rounded bg-highlight-soft px-1 py-px font-medium text-highlight-foreground">
               Perda {i.perda.toLocaleString("pt-BR")}%
             </span>
           )}
         </p>
       </div>
-      <dl className="grid w-full grid-cols-2 gap-2 text-left">
-        <div className="min-w-0 rounded-lg bg-muted px-2.5 py-2">
-          <dt className="truncate text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">{rotulo}</dt>
-          <dd className="truncate text-sm font-semibold tabular-nums">{formatarMoeda(valor)}</dd>
+      <dl className="grid w-full grid-cols-2 gap-1.5 text-left">
+        <div className="min-w-0 rounded-lg bg-muted px-1.5 py-1.5">
+          <dt className="truncate text-[9px] font-semibold tracking-wide text-muted-foreground uppercase">{rotulo}</dt>
+          <dd className="truncate text-xs font-semibold tabular-nums" title={formatarMoedaPrecisa(valor)}>
+            {formatarMoedaPrecisa(valor)}
+          </dd>
         </div>
-        <div className="min-w-0 rounded-lg bg-muted px-2.5 py-2">
-          <dt className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">Volume</dt>
-          <dd className="truncate text-sm font-semibold tabular-nums" title={formatarVolume(i.volume, i.unidade)}>
-            {formatarVolume(i.volume, i.unidade)}
+        <div className="min-w-0 rounded-lg bg-muted px-1.5 py-1.5">
+          <dt className="text-[9px] font-semibold tracking-wide text-muted-foreground uppercase">Volume</dt>
+          <dd className="truncate text-xs font-semibold tabular-nums" title={volume}>
+            {volume}
           </dd>
         </div>
       </dl>
-      <div className="grid w-full grid-cols-2 gap-2">
-        <Button variant="outline" onClick={onEditar} className="h-9" aria-label={`Editar ${i.nome}`}>
+      <div className="grid w-full grid-cols-2 gap-1.5">
+        <Button variant="outline" size="sm" onClick={onEditar} className="h-8 text-xs" aria-label={`Editar ${i.nome}`}>
           <Pencil data-icon="inline-start" />
           Editar
         </Button>
         <Button
           variant="outline"
+          size="sm"
           onClick={onExcluir}
-          className="h-9 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+          className="h-8 border-destructive/30 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
           aria-label={`Excluir ${i.nome}`}
         >
           <Trash data-icon="inline-start" />
