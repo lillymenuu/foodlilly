@@ -209,10 +209,10 @@ function calcularPreco(
   };
 }
 
-/** Classificação da margem de lucro sobre o preço. */
+/** Classificação da margem de lucro sobre o preço (como na referência: 30% = Regular, 50% = Boa). */
 export function classificarMargem(margemPct: number) {
-  if (margemPct >= 25) return { rotulo: "Boa", classe: "bg-success/10 text-success" };
-  if (margemPct >= 10) return { rotulo: "Razoável", classe: "bg-highlight-soft text-amber-800" };
+  if (margemPct >= 40) return { rotulo: "Boa", classe: "bg-success/15 text-success" };
+  if (margemPct >= 20) return { rotulo: "Regular", classe: "bg-highlight text-highlight-foreground" };
   return { rotulo: "Baixa", classe: "bg-destructive/10 text-destructive" };
 }
 
