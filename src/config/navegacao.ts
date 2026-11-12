@@ -14,7 +14,7 @@ import {
   Factory,
   FileText,
   GraduationCap,
-  House,
+  LayoutDashboard,
   IdCard,
   Landmark,
   Layers,
@@ -62,9 +62,9 @@ export type Modulo = Pagina & {
 
 export const navegacao: Modulo[] = [
   {
-    titulo: "Início",
-    href: "/inicio",
-    icone: House,
+    titulo: "Dashboard",
+    href: "/dashboard",
+    icone: LayoutDashboard,
     descricao: "Resumo do seu negócio.",
   },
   {

@@ -48,7 +48,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="h-16 justify-center border-b border-sidebar-border">
         <Link
-          href="/inicio"
+          href="/dashboard"
           onClick={fecharNoCelular}
           className="flex items-center gap-2 px-1"
         >

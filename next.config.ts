@@ -6,7 +6,8 @@ const nextConfig: NextConfig = {
   // Temporários (307) enquanto a estrutura de telas ainda pode mudar.
   async redirects() {
     return [
-      { source: "/painel", destination: "/inicio", permanent: false },
+      { source: "/painel", destination: "/dashboard", permanent: false },
+      { source: "/inicio", destination: "/dashboard", permanent: false },
       { source: "/precificacao", destination: "/precificar", permanent: false },
       { source: "/insumos", destination: "/precificar/insumos", permanent: false },
       { source: "/receitas", destination: "/precificar/receitas", permanent: false },

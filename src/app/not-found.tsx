@@ -15,12 +15,12 @@ export default function NotFound() {
       <p className="text-sm font-semibold text-muted-foreground">Erro 404</p>
       <h1 className="text-2xl font-semibold tracking-tight">Página não encontrada</h1>
       <p className="max-w-sm text-muted-foreground">
-        O endereço pode ter mudado ou não existe mais. Volte para o início e
+        O endereço pode ter mudado ou não existe mais. Volte para o dashboard e
         navegue pelo menu.
       </p>
-      <Button size="lg" render={<Link href="/inicio" />} className="mt-2">
+      <Button size="lg" render={<Link href="/dashboard" />} className="mt-2">
         <ArrowLeft data-icon="inline-start" />
-        Voltar para o início
+        Voltar para o dashboard
       </Button>
     </main>
   );

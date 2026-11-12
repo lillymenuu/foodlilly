@@ -3,7 +3,7 @@
 import { Fragment } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { House } from "lucide-react";
+import { LayoutDashboard } from "lucide-react";
 
 import {
   Breadcrumb,
@@ -20,7 +20,7 @@ export function AppBreadcrumb() {
   const rota = encontrarRota(pathname);
 
   const trilha: { titulo: string; href: string }[] = [];
-  if (rota && rota.modulo.href !== "/inicio") trilha.push(rota.modulo);
+  if (rota && rota.modulo.href !== "/dashboard") trilha.push(rota.modulo);
   if (rota?.pagina) trilha.push(rota.pagina);
   if (!rota && pathname === "/assinatura") {
     trilha.push({ titulo: "Assinatura", href: "/assinatura" });
@@ -31,14 +31,14 @@ export function AppBreadcrumb() {
       <BreadcrumbList className="flex-nowrap">
         <BreadcrumbItem className={trilha.length ? "hidden sm:inline-flex" : ""}>
           {trilha.length ? (
-            <BreadcrumbLink render={<Link href="/inicio" />} className="flex items-center gap-1.5">
-              <House className="size-3.5" />
-              Início
+            <BreadcrumbLink render={<Link href="/dashboard" />} className="flex items-center gap-1.5">
+              <LayoutDashboard className="size-3.5" />
+              Dashboard
             </BreadcrumbLink>
           ) : (
             <BreadcrumbPage className="flex items-center gap-1.5">
-              <House className="size-3.5" />
-              Início
+              <LayoutDashboard className="size-3.5" />
+              Dashboard
             </BreadcrumbPage>
           )}
         </BreadcrumbItem>
