@@ -16,15 +16,32 @@ import {
   insumos,
 } from "@/db/schema";
 
-import { valoresPadrao as padraoCusteio, campos as camposCusteio } from "../custeio/campos";
+import {
+  valoresPadrao as padraoCusteio,
+  campos as camposCusteio,
+} from "../custeio/campos";
 import { valoresPadrao as padraoDados } from "../dados-de-entrada/campos";
 import { custosUnitarios } from "../insumos/tipos";
-import { calcularTodas, dependentesDe, type Contexto, type FichaBase, type TipoFicha, type TipoItem } from "./calculo";
+import {
+  calcularTodas,
+  dependentesDe,
+  type Contexto,
+  type FichaBase,
+  type TipoFicha,
+  type TipoItem,
+} from "./calculo";
 import { MARGEM_REVENDA_PADRAO, type CategoriaFicha } from "./tipos";
 
 /** Custos e parâmetros do negócio usados no cálculo das fichas. */
 export async function carregarContexto(negocioId: string): Promise<Contexto> {
-  const [listaInsumos, listaFuncionarios, listaEquipamentos, [dados], [custos], extras] = await Promise.all([
+  const [
+    listaInsumos,
+    listaFuncionarios,
+    listaEquipamentos,
+    [dados],
+    [custos],
+    extras,
+  ] = await Promise.all([
     db
       .select({
         id: insumos.id,
@@ -41,19 +58,38 @@ export async function carregarContexto(negocioId: string): Promise<Contexto> {
       .where(eq(insumos.negocioId, negocioId)),
     db.select().from(funcionarios).where(eq(funcionarios.negocioId, negocioId)),
     db.select().from(equipamentos).where(eq(equipamentos.negocioId, negocioId)),
-    db.select().from(dadosEntrada).where(eq(dadosEntrada.negocioId, negocioId)).limit(1),
+    db
+      .select()
+      .from(dadosEntrada)
+      .where(eq(dadosEntrada.negocioId, negocioId))
+      .limit(1),
     db.select().from(custeio).where(eq(custeio.negocioId, negocioId)).limit(1),
-    db.select({ valor: custosExtras.valor }).from(custosExtras).where(eq(custosExtras.negocioId, negocioId)),
+    db
+      .select({ valor: custosExtras.valor })
+      .from(custosExtras)
+      .where(eq(custosExtras.negocioId, negocioId)),
   ]);
 
   // Sem nada salvo, valem os mesmos valores sugeridos que as telas mostram.
-  const p = { ...padraoDados, ...Object.fromEntries(Object.entries(dados ?? {}).filter(([, v]) => v != null)) };
-  const c = { ...padraoCusteio, ...Object.fromEntries(Object.entries(custos ?? {}).filter(([, v]) => v != null)) };
+  const p = {
+    ...padraoDados,
+    ...Object.fromEntries(
+      Object.entries(dados ?? {}).filter(([, v]) => v != null),
+    ),
+  };
+  const c = {
+    ...padraoCusteio,
+    ...Object.fromEntries(
+      Object.entries(custos ?? {}).filter(([, v]) => v != null),
+    ),
+  };
 
   const minutosMes = (p.diasMes ?? 21) * (p.horasDia ?? 8) * 60;
   const precoGasKg = p.gasPreco && p.gasPesoKg ? p.gasPreco / p.gasPesoKg : 0;
   const custosFixos =
-    camposCusteio.filter((k) => k.chave !== "receitaBruta").reduce((s, k) => s + Number(c[k.chave] ?? 0), 0) +
+    camposCusteio
+      .filter((k) => k.chave !== "receitaBruta")
+      .reduce((s, k) => s + Number(c[k.chave] ?? 0), 0) +
     extras.reduce((s, e) => s + e.valor, 0);
   const receita = Number(c.receitaBruta ?? 0);
 
@@ -73,7 +109,14 @@ export async function carregarContexto(negocioId: string): Promise<Contexto> {
       ]),
     ),
     funcionarios: new Map(
-      listaFuncionarios.map((f) => [f.id, { id: f.id, nome: f.nome, custoMinuto: minutosMes ? f.salario / minutosMes : 0 }]),
+      listaFuncionarios.map((f) => [
+        f.id,
+        {
+          id: f.id,
+          nome: f.nome,
+          custoMinuto: minutosMes ? f.salario / minutosMes : 0,
+        },
+      ]),
     ),
     equipamentos: new Map(
       listaEquipamentos.map((e) => [
@@ -83,7 +126,8 @@ export async function carregarContexto(negocioId: string): Promise<Contexto> {
               id: e.id,
               nome: e.nome,
               detalhe: `${(e.potenciaW ?? 0).toLocaleString("pt-BR")} W`,
-              custoMinuto: ((e.potenciaW ?? 0) / 1000 / 60) * (p.energiaKwh ?? 0),
+              custoMinuto:
+                ((e.potenciaW ?? 0) / 1000 / 60) * (p.energiaKwh ?? 0),
             }
           : {
               id: e.id,
@@ -110,7 +154,11 @@ export async function carregarContexto(negocioId: string): Promise<Contexto> {
 /** Todas as fichas do negócio (receitas e produtos), com a composição. */
 export async function listarFichas(negocioId: string): Promise<FichaBase[]> {
   const [linhas, itens] = await Promise.all([
-    db.select().from(fichas).where(eq(fichas.negocioId, negocioId)).orderBy(asc(fichas.nome)),
+    db
+      .select()
+      .from(fichas)
+      .where(eq(fichas.negocioId, negocioId))
+      .orderBy(asc(fichas.nome)),
     db
       .select({
         fichaId: fichaItens.fichaId,
@@ -130,9 +178,13 @@ export async function listarFichas(negocioId: string): Promise<FichaBase[]> {
 
   const porFicha = new Map<string, FichaBase["itens"]>();
   for (const i of itens) {
-    const refId = i.insumoId ?? i.fichaRefId ?? i.funcionarioId ?? i.equipamentoId;
+    const refId =
+      i.insumoId ?? i.fichaRefId ?? i.funcionarioId ?? i.equipamentoId;
     if (!refId) continue;
-    porFicha.set(i.fichaId, [...(porFicha.get(i.fichaId) ?? []), { tipo: i.tipo as TipoItem, refId, quantidade: i.quantidade }]);
+    porFicha.set(i.fichaId, [
+      ...(porFicha.get(i.fichaId) ?? []),
+      { tipo: i.tipo as TipoItem, refId, quantidade: i.quantidade },
+    ]);
   }
 
   return linhas.map((f) => ({
@@ -152,33 +204,57 @@ export async function listarFichas(negocioId: string): Promise<FichaBase[]> {
   }));
 }
 
-export async function listarCategoriasFicha(negocioId: string, tipo: TipoFicha): Promise<CategoriaFicha[]> {
+export async function listarCategoriasFicha(
+  negocioId: string,
+  tipo: TipoFicha,
+): Promise<CategoriaFicha[]> {
   return db
-    .select({ id: categoriasFicha.id, nome: categoriasFicha.nome, fichas: count(fichas.id) })
+    .select({
+      id: categoriasFicha.id,
+      nome: categoriasFicha.nome,
+      fichas: count(fichas.id),
+    })
     .from(categoriasFicha)
     .leftJoin(fichas, eq(fichas.categoriaId, categoriasFicha.id))
-    .where(and(eq(categoriasFicha.negocioId, negocioId), eq(categoriasFicha.tipo, tipo)))
+    .where(
+      and(
+        eq(categoriasFicha.negocioId, negocioId),
+        eq(categoriasFicha.tipo, tipo),
+      ),
+    )
     .groupBy(categoriasFicha.id)
     .orderBy(asc(categoriasFicha.nome));
 }
 
 /** Tudo calculado: fichas, contexto e resultados. */
 export async function carregarTudo(negocioId: string) {
-  const [contexto, lista] = await Promise.all([carregarContexto(negocioId), listarFichas(negocioId)]);
+  const [contexto, lista] = await Promise.all([
+    carregarContexto(negocioId),
+    listarFichas(negocioId),
+  ]);
   const { resultados } = calcularTodas(lista, contexto);
   return { contexto, fichas: lista, resultados };
 }
 
 /** Tudo que o editor precisa. Sem `fichaId`, prepara uma ficha nova. */
-export async function montarEditor(negocioId: string, tipo: TipoFicha, fichaId?: string) {
+export async function montarEditor(
+  negocioId: string,
+  tipo: TipoFicha,
+  fichaId?: string,
+) {
   // Categorias de massa e recheio vêm juntas: a receita pode alternar entre os dois tipos.
-  const [{ contexto, fichas: lista, resultados }, massa, recheio, produto] = await Promise.all([
-    carregarTudo(negocioId),
-    listarCategoriasFicha(negocioId, "massa"),
-    listarCategoriasFicha(negocioId, "recheio"),
-    listarCategoriasFicha(negocioId, "produto"),
-  ]);
-  const categoriasPorTipo: Record<TipoFicha, CategoriaFicha[]> = { massa, recheio, produto };
+  const [{ contexto, fichas: lista, resultados }, massa, recheio, produto] =
+    await Promise.all([
+      carregarTudo(negocioId),
+      listarCategoriasFicha(negocioId, "massa"),
+      listarCategoriasFicha(negocioId, "recheio"),
+      listarCategoriasFicha(negocioId, "produto"),
+    ]);
+  const categoriasPorTipo: Record<TipoFicha, CategoriaFicha[]> = {
+    massa,
+    recheio,
+    produto,
+  };
   const ficha = fichaId ? lista.find((f) => f.id === fichaId) : null;
   if (fichaId && !ficha) return null;
 
@@ -188,13 +264,48 @@ export async function montarEditor(negocioId: string, tipo: TipoFicha, fichaId?:
     .filter((f) => !proibidas.has(f.id))
     .map((f) => {
       const r = resultados.get(f.id)!;
-      return { id: f.id, nome: f.nome, tipo: f.tipo, custoTotal: r.custoTotal, cmvTotal: r.cmvTotal, pesoTotalG: f.pesoTotalG };
+      return {
+        id: f.id,
+        nome: f.nome,
+        tipo: f.tipo,
+        custoTotal: r.custoTotal,
+        cmvTotal: r.cmvTotal,
+        pesoTotalG: f.pesoTotalG,
+      };
     });
 
   const usadoEm = ficha
     ? lista
-        .filter((f) => f.itens.some((i) => (i.tipo === "receita" || i.tipo === "produto") && i.refId === ficha.id))
-        .map((f) => ({ id: f.id, nome: f.nome, preco: resultados.get(f.id)?.preco?.preco ?? null, pesoG: f.pesoTotalG }))
+        .filter((f) =>
+          f.itens.some(
+            (i) =>
+              (i.tipo === "receita" || i.tipo === "produto") &&
+              i.refId === ficha.id,
+          ),
+        )
+        .map((f) => {
+          const preco = resultados.get(f.id)?.preco;
+          return {
+            id: f.id,
+            nome: f.nome,
+            tipo: f.tipo,
+            preco: preco?.valido ? preco.preco : null,
+            // Quanto desta ficha (em gramas) entra na que a usa.
+            gramas: f.itens
+              .filter(
+                (i) =>
+                  (i.tipo === "receita" || i.tipo === "produto") &&
+                  i.refId === ficha.id,
+              )
+              .reduce((s, i) => s + i.quantidade, 0),
+          };
+        })
+        // Produtos primeiro, depois receitas; dentro de cada grupo, por nome.
+        .sort(
+          (a, b) =>
+            Number(a.tipo !== "produto") - Number(b.tipo !== "produto") ||
+            a.nome.localeCompare(b.nome, "pt-BR"),
+        )
     : [];
 
   return {

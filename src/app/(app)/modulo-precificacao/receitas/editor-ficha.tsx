@@ -44,7 +44,7 @@ import {
   paraNumero,
   paraTexto,
 } from "@/lib/numero-br";
-import { compararNome } from "@/lib/texto";
+import { compararNome, plural } from "@/lib/texto";
 
 import { duplicarFicha, excluirFicha, salvarFicha } from "./actions";
 import {
@@ -84,11 +84,13 @@ export type PropsEditor = {
   fichasRef: (ResumoRef & { id: string })[];
   /** Categorias por tipo (a receita pode alternar entre massa e recheio). */
   categoriasPorTipo: Record<TipoFicha, CategoriaFicha[]>;
+  /** Fichas que usam esta (produtos primeiro), com as gramas usadas. */
   usadoEm: {
     id: string;
     nome: string;
+    tipo: TipoFicha;
     preco: number | null;
-    pesoG: number | null;
+    gramas: number;
   }[];
 };
 
@@ -420,6 +422,10 @@ export function EditorFicha(props: PropsEditor) {
   }
 
   const p = resultado.preco;
+  const usadoProdutos = props.usadoEm.filter((u) => u.tipo === "produto");
+  const usadoReceitas = props.usadoEm.filter((u) => u.tipo !== "produto");
+  /** Soma dos preços de venda dos produtos que usam esta ficha. */
+  const totalVendas = usadoProdutos.reduce((s, u) => s + (u.preco ?? 0), 0);
   const pesoCampo = (
     <CampoNumeroFicha
       id="peso"
@@ -545,7 +551,9 @@ export function EditorFicha(props: PropsEditor) {
               >
                 {/* Receita exige categoria; produto pode ficar sem. */}
                 <option value="" disabled={tipo !== "produto"}>
-                  {tipo === "produto" ? "Sem categoria" : "Selecione uma categoria"}
+                  {tipo === "produto"
+                    ? "Sem categoria"
+                    : "Selecione uma categoria"}
                 </option>
                 {categorias.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -553,7 +561,11 @@ export function EditorFicha(props: PropsEditor) {
                   </option>
                 ))}
               </SelectNativo>
-              {erros.categoriaId && <p className="mt-1 text-xs text-destructive">{erros.categoriaId}</p>}
+              {erros.categoriaId && (
+                <p className="mt-1 text-xs text-destructive">
+                  {erros.categoriaId}
+                </p>
+              )}
             </div>
             <button
               type="button"
@@ -1054,38 +1066,87 @@ export function EditorFicha(props: PropsEditor) {
         </div>
       </section>
 
-      {props.usadoEm.length > 0 && (
+      {/* Fichas que usam esta (como na referência: "Produtos que usam esta receita") */}
+      {ficha && (tipo !== "produto" || props.usadoEm.length > 0) && (
         <section className="flex flex-col gap-3">
-          <h2 className="text-lg font-semibold">
-            Usad{tipo === "massa" ? "a" : "o"} em {props.usadoEm.length}{" "}
-            {props.usadoEm.length === 1 ? "ficha" : "fichas"}
-          </h2>
-          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {props.usadoEm.map((u) => (
-              <li key={u.id}>
-                <Link
-                  href={`${BASE}/ficha/${u.id}`}
-                  className="group flex h-full flex-col gap-1 rounded-xl bg-card p-3 ring-1 ring-foreground/10 transition hover:ring-2 hover:ring-highlight"
-                >
-                  <span className="truncate text-sm font-semibold">
-                    {u.nome}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {u.pesoG ? `${u.pesoG.toLocaleString("pt-BR")} g` : "Sem peso"}
-                  </span>
-                  {u.preco != null && (
-                    <span className="text-sm font-semibold text-success tabular-nums">
-                      {formatarMoeda(u.preco)}
-                    </span>
-                  )}
-                  <span className="mt-auto flex items-center gap-1 text-xs text-amber-700">
-                    Ver ficha{" "}
-                    <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <div className="flex items-center gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
+              <ShoppingBag className="size-5" />
+            </span>
+            <div>
+              <h2 className="text-lg font-semibold">
+                {tipo === "produto"
+                  ? "Produtos que usam este produto"
+                  : "Produtos que usam esta receita"}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {plural(usadoProdutos.length, "produto", "produtos")}
+                {usadoReceitas.length > 0 &&
+                  ` · ${plural(usadoReceitas.length, "receita", "receitas")}`}
+                {totalVendas > 0 && (
+                  <>
+                    {" · "}Total em vendas:{" "}
+                    <strong className="text-success tabular-nums">
+                      {formatarMoeda(totalVendas)}
+                    </strong>
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
+
+          {props.usadoEm.length ? (
+            <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {props.usadoEm.map((u) => {
+                const UIcone = INFO_TIPO[u.tipo].icone;
+                return (
+                  <li key={u.id}>
+                    <Link
+                      href={`${BASE}/ficha/${u.id}`}
+                      className="group flex h-full flex-col overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-2 hover:ring-highlight focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+                    >
+                      <span className="relative flex h-16 items-center justify-center bg-gradient-to-br from-primary to-primary-strong text-primary-foreground/30">
+                        <UIcone className="size-7" />
+                        <span className="absolute top-2 right-2 rounded-md bg-highlight px-1.5 py-0.5 text-[11px] font-bold text-highlight-foreground tabular-nums">
+                          {u.gramas.toLocaleString("pt-BR", {
+                            maximumFractionDigits: 1,
+                          })}
+                          g
+                        </span>
+                      </span>
+                      <span className="flex flex-1 flex-col gap-1 p-3">
+                        <span
+                          className="truncate text-sm font-semibold"
+                          title={u.nome}
+                        >
+                          {u.nome}
+                        </span>
+                        <span className="flex items-baseline justify-between gap-2 text-xs text-muted-foreground">
+                          {u.tipo === "produto"
+                            ? "Venda"
+                            : INFO_TIPO[u.tipo].titulo.slice(0, -1)}
+                          {u.tipo === "produto" && (
+                            <strong className="text-sm text-success tabular-nums">
+                              {u.preco != null ? formatarMoeda(u.preco) : "—"}
+                            </strong>
+                          )}
+                        </span>
+                        <span className="mt-auto flex items-center justify-center gap-1 pt-1 text-xs text-amber-700">
+                          Ver ficha
+                          <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
+                        </span>
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="rounded-xl bg-card px-4 py-8 text-center text-sm text-muted-foreground ring-1 ring-foreground/10">
+              Nenhum produto usa esta receita ainda. Quando você adicionar esta
+              receita a um produto, ele aparece aqui.
+            </p>
+          )}
         </section>
       )}
 
