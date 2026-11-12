@@ -1,10 +1,10 @@
 import "server-only";
 
-import { and, asc, eq, isNull } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 
 import { db } from "@/db";
-import { equipamentos, negocios } from "@/db/schema";
-import { garantirNegocioQuery } from "@/lib/negocio-atual";
+import { equipamentos } from "@/db/schema";
+import { garantirItensPadrao } from "@/lib/itens-padrao";
 
 import { EQUIPAMENTOS_PADRAO, type DadosEquipamento, type Equipamento } from "./tipos";
 
@@ -18,28 +18,11 @@ export function colunas(dados: DadosEquipamento) {
   };
 }
 
-/**
- * Na primeira visita do negócio, cria os equipamentos padrão. A data fica
- * marcada no negócio, então equipamentos excluídos pelo cliente não voltam.
- */
-export async function garantirEquipamentosPadrao(negocioId: string) {
-  const [, marcado] = await db.batch([
-    garantirNegocioQuery(negocioId),
-    db
-      .update(negocios)
-      .set({ equipamentosPadraoEm: new Date() })
-      .where(and(eq(negocios.id, negocioId), isNull(negocios.equipamentosPadraoEm)))
-      .returning({ id: negocios.id }),
-  ]);
-  if (!marcado.length) return; // já criados antes (ou por outra requisição ao mesmo tempo)
-
-  try {
-    await db.insert(equipamentos).values(EQUIPAMENTOS_PADRAO.map((e) => ({ negocioId, ...colunas(e) })));
-  } catch (erro) {
-    // Desfaz a marcação para tentar de novo na próxima visita.
-    await db.update(negocios).set({ equipamentosPadraoEm: null }).where(eq(negocios.id, negocioId));
-    throw erro;
-  }
+/** Na primeira visita do negócio, cria os equipamentos padrão (uma única vez). */
+export function garantirEquipamentosPadrao(negocioId: string) {
+  return garantirItensPadrao(negocioId, "equipamentosPadraoEm", () =>
+    db.insert(equipamentos).values(EQUIPAMENTOS_PADRAO.map((e) => ({ negocioId, ...colunas(e) }))),
+  );
 }
 
 export async function listarEquipamentos(negocioId: string): Promise<Equipamento[]> {

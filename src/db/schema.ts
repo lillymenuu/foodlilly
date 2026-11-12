@@ -10,6 +10,8 @@ export const negocios = pgTable("negocios", {
   criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
   /** Quando os equipamentos padrão foram criados (null = ainda não). Evita recriá-los se o cliente excluir. */
   equipamentosPadraoEm: timestamp("equipamentos_padrao_em", { withTimezone: true }),
+  /** Idem para os funcionários padrão. */
+  funcionariosPadraoEm: timestamp("funcionarios_padrao_em", { withTimezone: true }),
 });
 
 /**
@@ -110,4 +112,22 @@ export const equipamentos = pgTable(
     atualizadoEm: timestamp("atualizado_em", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("equipamentos_negocio_idx").on(t.negocioId)],
+);
+
+/** Precificar > Funcionários: equipe e salário bruto mensal (custo de mão de obra). */
+export const funcionarios = pgTable(
+  "funcionarios",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    negocioId: uuid("negocio_id")
+      .notNull()
+      .references(() => negocios.id, { onDelete: "cascade" }),
+    /** Nome ou função (ex.: "Confeiteira"). */
+    nome: text().notNull(),
+    /** Salário bruto mensal, sem encargos. */
+    salario: moeda("salario").notNull(),
+    criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+    atualizadoEm: timestamp("atualizado_em", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("funcionarios_negocio_idx").on(t.negocioId)],
 );
