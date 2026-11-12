@@ -16,7 +16,7 @@ import {
 import { encontrarRota } from "@/config/navegacao";
 
 export function AppBreadcrumb() {
-  const pathname = usePathname();
+  const pathname = usePathname(); // precisa de <Suspense> no layout (rotas dinâmicas)
   const rota = encontrarRota(pathname);
 
   const trilha: { titulo: string; href: string }[] = [];

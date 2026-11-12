@@ -59,10 +59,29 @@ Em cada tela:
 - `actions.ts` (`"use server"`): valida com **zod**, obtém o negócio com `obterNegocioAtualId()` (nunca confiar em id vindo do navegador), grava com `db.batch([...])` e chama `refresh()`.
 - Formulário (Client Component): números em pt-BR (vírgula), erro por campo, botão Salvar desabilitado sem alterações, barra fixa no rodapé no celular, modal de sucesso.
 - **Negócio atual:** `src/lib/negocio-atual.ts` devolve um negócio de demonstração fixo até a autenticação existir. Ao criar o login, só essa função muda.
-- **Tabelas:** `negocios` (o cliente), `dados_entrada` e `custeio` (1 linha por negócio), `custos_extras` (lista, substituída inteira a cada salvamento), `equipamentos`, `funcionarios`, `insumos` e `categorias_insumo` (cadastros; categoria com `sistema = true` não pode ser editada/excluída; excluir categoria com insumos exige mover para outra). Toda tabela de dados do cliente tem `negocio_id`.
+- **Tabelas:** `negocios` (o cliente), `dados_entrada` e `custeio` (1 linha por negócio), `custos_extras` (lista, substituída inteira a cada salvamento), `equipamentos`, `funcionarios`, `insumos`, `categorias_insumo`, `fichas`, `ficha_itens` e `categorias_ficha` (cadastros; categoria com `sistema = true` não pode ser editada/excluída; excluir categoria com insumos exige mover para outra). Toda tabela de dados do cliente tem `negocio_id`.
 - **Telas de cadastro (lista + criar/editar/excluir):** referências `modulo-precificacao/equipamentos/`, `/funcionarios/` e `/insumos/` (abas, categorias, modal dentro de modal, código de barras). Peças em `src/components/cadastro/index.tsx` (`BannerCadastro` com busca/ordenar/novo, `CardCadastro`, `VazioCadastro`, `ModalFormulario`, `CampoModal`, `ModalExcluir`); cabeçalho colorido dos modais em `src/components/modal-cabecalho.tsx` (novo = laranja, editar = marinho, excluir = vermelho); itens padrão com `garantirItensPadrao` (`src/lib/itens-padrao.ts`); busca/iniciais em `src/lib/texto.ts`. Actions sempre filtram por `negocio_id` ao editar/excluir. Itens padrão são criados na primeira visita e a data fica no negócio (`equipamentos_padrao_em`), para não recriar o que o cliente excluiu.
 - **Notificações:** `notificar.sucesso(titulo, descricao)` (também `.erro`, `.info`) de `src/components/notificacoes.tsx` mostra um aviso flutuante no topo, centralizado, que some em 4 s (Sonner, estilizado com a paleta). Usar após criar/editar/excluir; não usar faixas fixas na página para confirmar ações.
 - O banco do Neon é o **mesmo** em local e produção, e o dono do projeto também salva dados pelo site. Testes automatizados que gravam no banco: antes de começar, conferir se já existem dados (ex.: `atualizado_em`) e **não sobrescrever nem apagar dados que não foram criados pelo teste**; se o banco estiver vazio, apagar ao final o que o teste criou.
+
+## Receitas e produtos (fichas técnicas)
+
+Pasta `src/app/(app)/modulo-precificacao/receitas/`. Rotas: central `/receitas`, listas `/receitas/massas|recheios|produtos`, nova `/receitas/[tipo]/nova`, ficha `/receitas/ficha/[id]` (editor sempre editável, com Salvar).
+
+- Tabelas: `fichas` (tipo massa/recheio/produto), `ficha_itens` (composição: ingrediente, embalagem, receita, produto, mão de obra, equipamento; uma referência por linha, cascade ao excluir o item referenciado) e `categorias_ficha` (por tipo; excluir deixa as fichas sem categoria).
+- **Custos não ficam gravados**: são calculados por `calculo.ts` (mesmo código no servidor e no navegador). Fórmulas conferidas com fichas reais da referência:
+  - mão de obra = salário ÷ (dias × horas × 60) × minutos; equipamento elétrico = kW × h × R$/kWh; a gás = kg/h × h × (R$ botijão ÷ kg)
+  - insumo = quantidade × custo real da unidade (com perda); receita/produto vinculado = gramas ÷ peso total × custo total
+  - CMV = só insumos (inclusive os das fichas vinculadas)
+  - produto: fabricação = custo/porção ÷ (1 − alíquota do Custeio); preço = fabricação ÷ (1 − margem − imposto − taxa do crédito); revenda = fabricação ÷ (1 − margem revenda − imposto); marketplace = preço ÷ (1 − taxa do app)
+- Vínculos circulares são bloqueados (`dependentesDe`) no editor e no servidor.
+- Pendente: foto, PDF da ficha, compartilhar, "meta de vendas".
+
+## Armadilhas já resolvidas (não repetir)
+
+- `<Button render={<Link />}>`: o `Button` já passa `nativeButton={false}` sozinho quando há `render`; sem isso o Base UI avisa e dá erro de hidratação.
+- O menu lateral e o breadcrumb usam `usePathname` e ficam em `<Suspense>` no layout (exigência das rotas dinâmicas com Cache Components). Por isso o `Sidebar` lê `useIsMobile()` direto, e não do provedor (senão dá erro de hidratação no celular).
+- Em páginas com `params`, ler o parâmetro **dentro** do `<Suspense>` (passar a promise para o componente async).
 
 - Área do SuperAdmin: a criar (ex.: `src/app/(admin)/admin/`)
 - **Banco**: PostgreSQL 18 no **Neon**, projeto `dblillyfood` (banco `neondb`), criado pela integração Vercel ↔ Neon e conectado ao projeto `foodlilly` na Vercel. Acesso pela variável `DATABASE_URL` (connection string *pooled*). A integração também cria `DATABASE_URL_UNPOOLED` (conexão direta, útil para migrations).

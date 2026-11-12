@@ -6,6 +6,7 @@ import {
   boolean,
   index,
   integer,
+  jsonb,
   numeric,
   pgTable,
   text,
@@ -188,4 +189,81 @@ export const insumos = pgTable(
     atualizadoEm: timestamp("atualizado_em", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("insumos_negocio_idx").on(t.negocioId), index("insumos_categoria_idx").on(t.categoriaId)],
+);
+
+export const TIPOS_FICHA = ["massa", "recheio", "produto"] as const;
+
+/** Categorias de massas, recheios e produtos (cada tipo tem as suas). */
+export const categoriasFicha = pgTable(
+  "categorias_ficha",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    negocioId: uuid("negocio_id")
+      .notNull()
+      .references(() => negocios.id, { onDelete: "cascade" }),
+    tipo: text({ enum: TIPOS_FICHA }).notNull(),
+    nome: text().notNull(),
+    criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("categorias_ficha_nome_unico").on(t.negocioId, t.tipo, sql`lower(${t.nome})`)],
+);
+
+/**
+ * Ficha técnica: receitas (massa, recheio) e produtos. A composição fica em
+ * `ficha_itens`; os custos são calculados (não ficam gravados).
+ */
+export const fichas = pgTable(
+  "fichas",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    negocioId: uuid("negocio_id")
+      .notNull()
+      .references(() => negocios.id, { onDelete: "cascade" }),
+    tipo: text({ enum: TIPOS_FICHA }).notNull(),
+    nome: text().notNull(),
+    /** Sem categoria quando a categoria é excluída. */
+    categoriaId: uuid("categoria_id").references(() => categoriasFicha.id, { onDelete: "set null" }),
+    /** Quantas porções/unidades a ficha rende. */
+    rendimento: numeric({ precision: 10, scale: 2, mode: "number" }).notNull().default(1),
+    /** Peso final pronto, em gramas (base do custo por kg e do uso em outras fichas). */
+    pesoTotalG: numeric("peso_total_g", { precision: 12, scale: 2, mode: "number" }),
+    tempoPreparoMin: integer("tempo_preparo_min"),
+    /** Produtos: margem de lucro desejada sobre o preço (%). */
+    margem: numeric({ precision: 5, scale: 2, mode: "number" }),
+    /** Produtos: margem para revenda (%); nulo = padrão. */
+    margemRevenda: numeric("margem_revenda", { precision: 5, scale: 2, mode: "number" }),
+    favorito: boolean().notNull().default(false),
+    /** Passos do modo de preparo, em ordem. */
+    modoPreparo: jsonb("modo_preparo").$type<string[]>().notNull().default([]),
+    criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+    atualizadoEm: timestamp("atualizado_em", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("fichas_negocio_idx").on(t.negocioId, t.tipo)],
+);
+
+export const TIPOS_ITEM_FICHA = ["ingrediente", "embalagem", "receita", "produto", "mao_obra", "equipamento"] as const;
+
+/**
+ * Composição de uma ficha. Só uma referência é preenchida, conforme o tipo:
+ * ingrediente/embalagem -> insumo (quantidade na unidade do insumo);
+ * receita/produto -> ficha (quantidade em gramas);
+ * mao_obra -> funcionário e equipamento -> equipamento (quantidade em minutos).
+ * Excluir o item referenciado remove a linha da composição (cascade).
+ */
+export const fichaItens = pgTable(
+  "ficha_itens",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    fichaId: uuid("ficha_id")
+      .notNull()
+      .references(() => fichas.id, { onDelete: "cascade" }),
+    tipo: text({ enum: TIPOS_ITEM_FICHA }).notNull(),
+    insumoId: uuid("insumo_id").references(() => insumos.id, { onDelete: "cascade" }),
+    fichaRefId: uuid("ficha_ref_id").references(() => fichas.id, { onDelete: "cascade" }),
+    funcionarioId: uuid("funcionario_id").references(() => funcionarios.id, { onDelete: "cascade" }),
+    equipamentoId: uuid("equipamento_id").references(() => equipamentos.id, { onDelete: "cascade" }),
+    quantidade: numeric({ precision: 12, scale: 3, mode: "number" }).notNull(),
+    ordem: integer().notNull().default(0),
+  },
+  (t) => [index("ficha_itens_ficha_idx").on(t.fichaId), index("ficha_itens_ref_idx").on(t.fichaRefId)],
 );

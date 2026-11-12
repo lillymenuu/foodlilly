@@ -36,6 +36,13 @@
       "when": 1794453148402,
       "tag": "0004_green_corsair",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794508634389,
+      "tag": "0005_faithful_mister_sinister",
+      "breakpoints": true
     }
   ]
 }

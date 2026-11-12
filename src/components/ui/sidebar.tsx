@@ -162,7 +162,12 @@ function Sidebar({
   variant?: "sidebar" | "floating" | "inset"
   collapsible?: "offcanvas" | "icon" | "none"
 }) {
-  const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+  const { state, openMobile, setOpenMobile } = useSidebar()
+  // Lido aqui (e não do provedor): o menu fica num <Suspense> no layout e pode
+  // hidratar depois do provedor. Com o valor do provedor, no celular ele já
+  // viria "true" e não bateria com o HTML do servidor (erro de hidratação);
+  // lendo aqui, a hidratação usa o mesmo valor do servidor e só depois troca.
+  const isMobile = useIsMobile()
 
   if (collapsible === "none") {
     return (

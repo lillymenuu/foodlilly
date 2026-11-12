@@ -45,12 +45,19 @@ function Button({
   className,
   variant = "default",
   size = "default",
+  render,
+  nativeButton,
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
   return (
     <ButtonPrimitive
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
+      render={render}
+      // Botão desenhado como outro elemento (ex.: render={<Link />}) não é um
+      // <button> nativo. Sem isto, o Base UI avisa e o HTML do servidor não
+      // bate com o do navegador (erro de hidratação).
+      nativeButton={nativeButton ?? !render}
       {...props}
     />
   )

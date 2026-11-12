@@ -29,8 +29,16 @@ import { encontrarRota, navegacao, type Modulo } from "@/config/navegacao";
 
 const ativoNoMenu = "data-active:[&>svg:first-child]:text-sidebar-primary";
 
-export function AppSidebar() {
-  const pathname = usePathname();
+/** Menu com o item da página atual marcado (precisa de <Suspense> no layout). */
+export function AppSidebarAtual() {
+  return <AppSidebar pathname={usePathname()} />;
+}
+
+/**
+ * Sem `pathname` (versão provisória do <Suspense>, em rotas dinâmicas como
+ * /ficha/[id]), mostra o menu sem item marcado.
+ */
+export function AppSidebar({ pathname = "" }: { pathname?: string }) {
   const { setOpenMobile } = useSidebar();
   const rota = encontrarRota(pathname);
 
