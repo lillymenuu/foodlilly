@@ -24,8 +24,10 @@ import { campoMoeda, valoresPadraoDe, type Campo, type Grupo, type ValoresDe } f
 /** Chaves dos campos fixos (colunas da tabela custeio). */
 export type ChaveCusteio = keyof Omit<typeof custeio.$inferSelect, "negocioId" | "atualizadoEm">;
 
-/** Acima deste percentual da receita, o custo fixo gera alerta. */
+/** Alíquota (custos fixos ÷ receita) acima deste percentual: "Crítico" e alerta. */
 export const LIMITE_CUSTO_FIXO = 0.3;
+/** Acima deste percentual (e até o limite acima), a alíquota fica em "Atenção". */
+export const LIMITE_ATENCAO = 0.2;
 
 export const campoReceita: Campo<ChaveCusteio> = campoMoeda(
   "receitaBruta",
