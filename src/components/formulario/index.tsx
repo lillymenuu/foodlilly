@@ -366,10 +366,10 @@ export function ModalSalvo({
           Você deseja permanecer nesta página ou voltar para {voltarRotulo}?
         </DialogDescription>
         <div className="flex flex-col-reverse gap-2 border-t bg-muted/50 px-6 py-4 sm:flex-row">
-          <DialogClose render={<Button variant="outline" size="lg" className="h-11 flex-1" />}>
+          <DialogClose render={<Button variant="outline" size="lg" className="h-11 sm:flex-1" />}>
             Permanecer na página
           </DialogClose>
-          <Button variant="highlight" size="lg" className="h-11 flex-1" render={<Link href={voltarHref} />}>
+          <Button variant="highlight" size="lg" className="h-11 sm:flex-1" render={<Link href={voltarHref} />}>
             Voltar para {voltarRotulo}
             <ArrowRight data-icon="inline-end" />
           </Button>

@@ -27,6 +27,14 @@ import {
 import { Label } from "@/components/ui/label";
 import type { ResultadoSalvar } from "@/lib/validacao";
 
+/** Gênero gramatical do item, para os textos ("novo funcionário" / "nova categoria"). */
+export type Genero = "m" | "f";
+const artigos = (g: Genero = "m") =>
+  g === "f"
+    ? { novo: "nova", o: "a", do: "da", excluido: "excluída" }
+    : { novo: "novo", o: "o", do: "do", excluido: "excluído" };
+const maiuscula = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+
 /*
  * Peças das telas de cadastro (lista + criar/editar/excluir).
  * Referência de uso: modulo-precificacao/equipamentos e /funcionarios.
@@ -44,12 +52,18 @@ export function BannerCadastro<O extends string>({
   ordem,
   onOrdem,
   onNovo,
+  abas,
+  semFerramentas,
 }: {
   titulo: string;
   descricao: string;
   icone: LucideIcon;
   /** Selos com números do cadastro (ex.: "9 equipamentos"). */
-  resumo: { texto: React.ReactNode; icone?: LucideIcon }[];
+  resumo?: { texto: React.ReactNode; icone?: LucideIcon }[];
+  /** Abas abaixo do título (ex.: Insumos | Categorias). */
+  abas?: React.ReactNode;
+  /** Esconde busca, ordenar e novo (ex.: numa aba sem lista). */
+  semFerramentas?: boolean;
   busca: string;
   onBusca: (busca: string) => void;
   placeholderBusca: string;
@@ -65,62 +79,87 @@ export function BannerCadastro<O extends string>({
           <Icone className="size-6" />
         </span>
         <div className="min-w-0">
-          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{titulo}</h1>
-          <p className="mt-0.5 max-w-xl text-sm text-primary-foreground/75">{descricao}</p>
+          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+            {titulo}
+          </h1>
+          <p className="mt-0.5 max-w-xl text-sm text-primary-foreground/75">
+            {descricao}
+          </p>
         </div>
       </div>
 
-      <ul className="flex flex-wrap gap-2 text-xs font-medium">
-        {resumo.map((item, i) => (
-          <li key={i} className="flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/15">
-            {item.icone && <item.icone className="size-3.5 text-highlight" />}
-            {item.texto}
-          </li>
-        ))}
-      </ul>
+      {abas}
 
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <label className="relative flex-1">
-          <span className="sr-only">{placeholderBusca}</span>
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-primary-foreground/60" />
-          <input
-            type="search"
-            value={busca}
-            onChange={(e) => onBusca(e.target.value)}
-            placeholder={placeholderBusca}
-            className="h-11 w-full rounded-lg bg-white/10 pr-3 pl-9 text-sm ring-1 ring-white/15 outline-none placeholder:text-primary-foreground/60 focus-visible:ring-2 focus-visible:ring-highlight"
-          />
-        </label>
-        <div className="flex gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="h-11 flex-1 border-white/15 bg-white/10 text-primary-foreground hover:bg-white/20 hover:text-primary-foreground sm:flex-none"
-                />
-              }
+      {resumo && (
+        <ul className="flex flex-wrap gap-2 text-xs font-medium">
+          {resumo.map((item, i) => (
+            <li
+              key={i}
+              className="flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/15"
             >
-              <ArrowUpDown data-icon="inline-start" />
-              Ordenar
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuRadioGroup value={ordem} onValueChange={(v) => onOrdem(v as O)}>
-                {(Object.keys(ordens) as O[]).map((chave) => (
-                  <DropdownMenuRadioItem key={chave} value={chave} closeOnClick>
-                    {ordens[chave]}
-                  </DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button variant="highlight" size="lg" className="h-11 flex-1 px-5 sm:flex-none" onClick={onNovo}>
-            <CirclePlus data-icon="inline-start" />
-            Novo
-          </Button>
+              {item.icone && <item.icone className="size-3.5 text-highlight" />}
+              {item.texto}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {!semFerramentas && (
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <label className="relative flex-1">
+            <span className="sr-only">{placeholderBusca}</span>
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-primary-foreground/60" />
+            <input
+              type="search"
+              value={busca}
+              onChange={(e) => onBusca(e.target.value)}
+              placeholder={placeholderBusca}
+              className="h-11 w-full rounded-lg bg-white/10 pr-3 pl-9 text-sm ring-1 ring-white/15 outline-none placeholder:text-primary-foreground/60 focus-visible:ring-2 focus-visible:ring-highlight"
+            />
+          </label>
+          <div className="flex gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="h-11 flex-1 border-white/15 bg-white/10 text-primary-foreground hover:bg-white/20 hover:text-primary-foreground sm:flex-none"
+                  />
+                }
+              >
+                <ArrowUpDown data-icon="inline-start" />
+                Ordenar
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuRadioGroup
+                  value={ordem}
+                  onValueChange={(v) => onOrdem(v as O)}
+                >
+                  {(Object.keys(ordens) as O[]).map((chave) => (
+                    <DropdownMenuRadioItem
+                      key={chave}
+                      value={chave}
+                      closeOnClick
+                    >
+                      {ordens[chave]}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button
+              variant="highlight"
+              size="lg"
+              className="h-11 flex-1 px-5 sm:flex-none"
+              onClick={onNovo}
+            >
+              <CirclePlus data-icon="inline-start" />
+              Novo
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </section>
   );
 }
@@ -146,7 +185,9 @@ export function CabecalhoLista({
 }
 
 export function GradeCadastro({ children }: { children: React.ReactNode }) {
-  return <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{children}</ul>;
+  return (
+    <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{children}</ul>
+  );
 }
 
 /** Card de um item: avatar/ícone à esquerda, conteúdo, e botões editar/excluir. */
@@ -173,7 +214,13 @@ export function CardCadastro({
         {children}
       </div>
       <div className="-mt-1 -mr-1 flex shrink-0">
-        <Button variant="ghost" size="icon" onClick={onEditar} aria-label={`Editar ${titulo}`} title="Editar">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onEditar}
+          aria-label={`Editar ${titulo}`}
+          title="Editar"
+        >
           <Pencil />
         </Button>
         <Button
@@ -214,9 +261,13 @@ export function VazioCadastro({
       <span className="flex size-12 items-center justify-center rounded-full bg-highlight-soft text-highlight-foreground">
         {busca ? <SearchX className="size-6" /> : <Icone className="size-6" />}
       </span>
-      <p className="font-medium">{busca ? `Nada encontrado para "${busca}".` : textoVazio}</p>
+      <p className="font-medium">
+        {busca ? `Nada encontrado para "${busca}".` : textoVazio}
+      </p>
       <p className="max-w-sm text-sm text-muted-foreground">
-        {busca ? "Confira a escrita ou limpe a busca para ver todos." : dicaVazia}
+        {busca
+          ? "Confira a escrita ou limpe a busca para ver todos."
+          : dicaVazia}
       </p>
       {busca ? (
         <Button variant="outline" size="lg" onClick={onLimpar}>
@@ -257,7 +308,9 @@ export function CampoModal({
   return (
     <div className="flex flex-col gap-1.5">
       <Label htmlFor={id}>{rotulo}</Label>
-      {descricao && <p className="text-xs text-muted-foreground">{descricao}</p>}
+      {descricao && (
+        <p className="text-xs text-muted-foreground">{descricao}</p>
+      )}
       {children}
       {erro && (
         <p id={`${id}-erro`} className="text-xs text-destructive">
@@ -272,6 +325,9 @@ export function CampoModal({
 export function ModalFormulario({
   editando,
   item,
+  genero,
+  subtitulo,
+  largo,
   descricaoNovo,
   salvando,
   erroGeral,
@@ -282,6 +338,11 @@ export function ModalFormulario({
   editando: boolean;
   /** Nome do tipo de item, minúsculo: "equipamento", "funcionário". */
   item: string;
+  genero?: Genero;
+  /** Substitui a descrição do cabeçalho ao editar (ex.: o nome do item). */
+  subtitulo?: string;
+  /** Modal mais largo, para formulários com mais campos. */
+  largo?: boolean;
   descricaoNovo: string;
   salvando: boolean;
   erroGeral?: string;
@@ -289,19 +350,30 @@ export function ModalFormulario({
   onEnviar: () => void;
   children: React.ReactNode;
 }) {
+  const a = artigos(genero);
   return (
     <Dialog open onOpenChange={(aberto) => !aberto && onFechar()}>
-      <DialogContent showCloseButton={false} className="gap-0 overflow-hidden p-0 sm:max-w-md">
+      <DialogContent
+        showCloseButton={false}
+        className={`max-h-[calc(100dvh-2rem)] gap-0 overflow-y-auto p-0 ${largo ? "sm:max-w-lg" : "sm:max-w-md"}`}
+      >
         <ModalCabecalho
           tipo={editando ? "editar" : "novo"}
           icone={editando ? Pencil : CirclePlus}
-          titulo={editando ? `Editar ${item}` : `Adicionar novo ${item}`}
-          descricao={editando ? `Atualize as informações do ${item}.` : descricaoNovo}
+          titulo={editando ? `Editar ${item}` : `Adicionar ${a.novo} ${item}`}
+          descricao={
+            editando
+              ? (subtitulo ?? `Atualize as informações ${a.do} ${item}.`)
+              : descricaoNovo
+          }
         />
         <form
           noValidate
           onSubmit={(e) => {
             e.preventDefault();
+            // Modal aberto dentro de outro (ex.: nova categoria no insumo): sem isto,
+            // o envio "sobe" pela árvore do React e também envia o formulário de fora.
+            e.stopPropagation();
             if (!salvando) onEnviar();
           }}
         >
@@ -309,9 +381,19 @@ export function ModalFormulario({
             {erroGeral && <Aviso tipo="erro">{erroGeral}</Aviso>}
             {children}
           </div>
-          <div className="flex flex-col-reverse gap-2 border-t bg-muted/50 px-5 py-4 sm:flex-row sm:px-6">
+          {/* Fixo no rodapé: em formulários longos (celular) o botão fica sempre visível. */}
+          <div className="sticky bottom-0 z-10 flex flex-col-reverse gap-2 border-t bg-muted px-5 py-4 sm:flex-row sm:px-6">
             {editando && (
-              <DialogClose render={<Button type="button" variant="outline" size="lg" className="h-11 flex-1" />}>
+              <DialogClose
+                render={
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="lg"
+                    className="h-11 sm:flex-1"
+                  />
+                }
+              >
                 Cancelar
               </DialogClose>
             )}
@@ -320,14 +402,21 @@ export function ModalFormulario({
               size="lg"
               variant={editando ? "default" : "highlight"}
               disabled={salvando}
-              className="h-11 flex-1"
+              className="h-11 sm:flex-1"
             >
               {salvando ? (
-                <LoaderCircle className="animate-spin" data-icon="inline-start" />
+                <LoaderCircle
+                  className="animate-spin"
+                  data-icon="inline-start"
+                />
               ) : editando ? null : (
                 <CirclePlus data-icon="inline-start" />
               )}
-              {salvando ? "Salvando..." : editando ? "Confirmar alterações" : `Adicionar ${item}`}
+              {salvando
+                ? "Salvando..."
+                : editando
+                  ? "Confirmar alterações"
+                  : `Adicionar ${item}`}
             </Button>
           </div>
         </form>
@@ -339,6 +428,9 @@ export function ModalFormulario({
 /** Modal de confirmação de exclusão. */
 export function ModalExcluir({
   item,
+  genero,
+  children,
+  desabilitado,
   nome,
   consequencia,
   detalhes,
@@ -348,6 +440,11 @@ export function ModalExcluir({
 }: {
   /** Nome do tipo de item, minúsculo: "equipamento", "funcionário". */
   item: string;
+  genero?: Genero;
+  /** Conteúdo extra (ex.: escolher para onde mover itens). */
+  children?: React.ReactNode;
+  /** Impede confirmar (ex.: falta escolher o destino). */
+  desabilitado?: boolean;
   nome: string;
   consequencia: string;
   detalhes: { rotulo: string; valor: string }[];
@@ -357,18 +454,22 @@ export function ModalExcluir({
 }) {
   const [erro, setErro] = useState<string>();
   const [excluindo, startTransition] = useTransition();
+  const a = artigos(genero);
 
   function confirmar() {
     startTransition(async () => {
       const resultado = await excluir();
-      if (resultado.ok) onConcluido(`${item[0].toUpperCase()}${item.slice(1)} excluído`, nome);
+      if (resultado.ok) onConcluido(`${maiuscula(item)} ${a.excluido}`, nome);
       else setErro(resultado.mensagem);
     });
   }
 
   return (
     <Dialog open onOpenChange={(aberto) => !aberto && onFechar()}>
-      <DialogContent showCloseButton={false} className="gap-0 overflow-hidden p-0 sm:max-w-md">
+      <DialogContent
+        showCloseButton={false}
+        className="gap-0 overflow-hidden p-0 sm:max-w-md"
+      >
         <ModalCabecalho
           tipo="excluir"
           icone={Trash}
@@ -382,7 +483,8 @@ export function ModalExcluir({
             <div className="flex flex-col gap-1.5">
               <p className="font-semibold text-destructive">Atenção!</p>
               <p>
-                Você está prestes a excluir o {item} <strong>{nome}</strong>.
+                Você está prestes a excluir {a.o} {item} <strong>{nome}</strong>
+                .
               </p>
               <p className="text-muted-foreground">{consequencia}</p>
             </div>
@@ -391,23 +493,37 @@ export function ModalExcluir({
             {[{ rotulo: "Nome", valor: nome }, ...detalhes].map((d) => (
               <div key={d.rotulo} className="flex justify-between gap-4">
                 <dt className="text-muted-foreground">{d.rotulo}</dt>
-                <dd className="text-right font-medium tabular-nums">{d.valor}</dd>
+                <dd className="text-right font-medium tabular-nums">
+                  {d.valor}
+                </dd>
               </div>
             ))}
           </dl>
+          {children}
         </div>
         <div className="flex flex-col-reverse gap-2 border-t bg-muted/50 px-5 py-4 sm:flex-row sm:px-6">
-          <DialogClose render={<Button type="button" variant="outline" size="lg" className="h-11 flex-1" />}>
+          <DialogClose
+            render={
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                className="h-11 sm:flex-1"
+              />
+            }
+          >
             Cancelar
           </DialogClose>
           <Button
             type="button"
             size="lg"
-            disabled={excluindo}
+            disabled={excluindo || desabilitado}
             onClick={confirmar}
-            className="h-11 flex-1 bg-destructive text-white hover:bg-destructive/90"
+            className="h-11 sm:flex-1 bg-destructive text-white hover:bg-destructive/90"
           >
-            {excluindo && <LoaderCircle className="animate-spin" data-icon="inline-start" />}
+            {excluindo && (
+              <LoaderCircle className="animate-spin" data-icon="inline-start" />
+            )}
             {excluindo ? "Excluindo..." : "Confirmar exclusão"}
           </Button>
         </div>

@@ -1,7 +1,18 @@
 // Tabelas do banco (Drizzle).
 // Depois de alterar este arquivo: `npm run db:generate` e `npm run db:migrate`.
 
-import { index, integer, numeric, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import {
+  boolean,
+  index,
+  integer,
+  numeric,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
 
 /** Negócio do cliente (lanchonete, confeitaria...). Toda informação pertence a um negócio. */
 export const negocios = pgTable("negocios", {
@@ -12,6 +23,8 @@ export const negocios = pgTable("negocios", {
   equipamentosPadraoEm: timestamp("equipamentos_padrao_em", { withTimezone: true }),
   /** Idem para os funcionários padrão. */
   funcionariosPadraoEm: timestamp("funcionarios_padrao_em", { withTimezone: true }),
+  /** Idem para as categorias de insumo padrão. */
+  categoriasInsumoPadraoEm: timestamp("categorias_insumo_padrao_em", { withTimezone: true }),
 });
 
 /**
@@ -130,4 +143,49 @@ export const funcionarios = pgTable(
     atualizadoEm: timestamp("atualizado_em", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("funcionarios_negocio_idx").on(t.negocioId)],
+);
+
+/** Categorias dos insumos. `sistema` = criada pelo foodlilly, não pode ser editada nem excluída. */
+export const categoriasInsumo = pgTable(
+  "categorias_insumo",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    negocioId: uuid("negocio_id")
+      .notNull()
+      .references(() => negocios.id, { onDelete: "cascade" }),
+    nome: text().notNull(),
+    sistema: boolean().notNull().default(false),
+    criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+  },
+  // Nome único por negócio, sem diferenciar maiúsculas.
+  (t) => [uniqueIndex("categorias_insumo_nome_unico").on(t.negocioId, sql`lower(${t.nome})`)],
+);
+
+export const UNIDADES = ["unidade", "g", "kg", "ml", "l", "cm", "m"] as const;
+
+/** Precificar > Insumos: matérias-primas, ingredientes e embalagens. */
+export const insumos = pgTable(
+  "insumos",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    negocioId: uuid("negocio_id")
+      .notNull()
+      .references(() => negocios.id, { onDelete: "cascade" }),
+    /** No action: a categoria só pode ser excluída depois de mover os insumos (checado no fim do comando, então excluir o negócio inteiro funciona). */
+    categoriaId: uuid("categoria_id")
+      .notNull()
+      .references(() => categoriasInsumo.id, { onDelete: "no action" }),
+    nome: text().notNull(),
+    codigoBarras: text("codigo_barras"),
+    /** Volume bruto comprado, na `unidade`. */
+    volume: numeric({ precision: 12, scale: 3, mode: "number" }).notNull(),
+    unidade: text({ enum: UNIDADES }).notNull(),
+    /** Custo médio pago pelo volume bruto. */
+    custo: moeda("custo").notNull(),
+    /** Fator de perda em % (casca, aparas, evaporação...). */
+    perda: numeric({ precision: 5, scale: 2, mode: "number" }).notNull().default(0),
+    criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+    atualizadoEm: timestamp("atualizado_em", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("insumos_negocio_idx").on(t.negocioId), index("insumos_categoria_idx").on(t.categoriaId)],
 );

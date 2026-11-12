@@ -7,7 +7,7 @@ import { negocios } from "@/db/schema";
 import { garantirNegocioQuery } from "@/lib/negocio-atual";
 
 /** Colunas de `negocios` que marcam quando os itens padrão de cada cadastro foram criados. */
-type MarcaPadrao = "equipamentosPadraoEm" | "funcionariosPadraoEm";
+type MarcaPadrao = "equipamentosPadraoEm" | "funcionariosPadraoEm" | "categoriasInsumoPadraoEm";
 
 /**
  * Na primeira visita do negócio a um cadastro, cria os itens padrão. A data
