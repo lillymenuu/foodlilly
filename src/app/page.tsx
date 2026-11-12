@@ -18,8 +18,8 @@ export default function Home() {
       <span className="rounded-full border border-primary-foreground/20 px-3 py-1 text-sm text-primary-foreground/70">
         Em construção
       </span>
-      <Button variant="highlight" size="lg" render={<Link href="/painel" />}>
-        Ver prévia do painel
+      <Button variant="highlight" size="lg" render={<Link href="/inicio" />}>
+        Ver prévia do sistema
         <ArrowRight data-icon="inline-end" />
       </Button>
     </main>

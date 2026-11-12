@@ -35,8 +35,14 @@ Paleta definida em `src/app/globals.css` (tokens do tema; usar as classes, nunca
 ## Estrutura das telas
 
 - `src/app/page.tsx`: página pública (por enquanto, "em construção" com link para a prévia)
-- `src/app/(app)/`: área logada do cliente, com `layout.tsx` (menu lateral `src/components/app-sidebar.tsx` + cabeçalho)
-  - `painel/` tem dados **de exemplo** fixos no código; as demais telas usam `<EmBreve>` até o escopo ser aprovado
+- `src/app/(app)/`: área logada do cliente, com `layout.tsx` (menu lateral + cabeçalho com breadcrumb)
+- **Navegação: fonte única em `src/config/navegacao.ts`.** Menu lateral (`app-sidebar.tsx`), breadcrumb (`app-breadcrumb.tsx`) e páginas centrais dos módulos (`modulo-hub.tsx`) leem dela. Tela nova = item no config + `page.tsx` na rota.
+  - Módulos: Início, Capacitação, Precificar, Estoque, Financeiro, Produção (Beta), Checklists, Modo funcionário (`/equipe`), Novidades. Assinatura fica no rodapé do menu.
+  - Módulo com subpáginas tem página central (`<ModuloHub href="/modulo" />`) com cards; `grupo` separa seções; `bloqueado: true` mostra cadeado e "Em breve", sem link nem página.
+  - Subpáginas ainda vazias usam `<EmBreve href="..." />` (título e descrição vêm do config).
+  - `inicio/` tem dados **de exemplo** fixos no código.
+- Menu: só um módulo aberto por vez; no celular, escolher uma subpágina fecha a gaveta.
+- Inspiração das funcionalidades: menu da referência. Nomes de marca dela não são usados (ex.: "Deu Check" virou "Checklists").
 - Área do SuperAdmin: a criar (ex.: `src/app/(admin)/admin/`)
 - **Banco**: PostgreSQL 18 no **Neon**, projeto `dblillyfood` (banco `neondb`), criado pela integração Vercel ↔ Neon e conectado ao projeto `foodlilly` na Vercel. Acesso pela variável `DATABASE_URL` (connection string *pooled*). A integração também cria `DATABASE_URL_UNPOOLED` (conexão direta, útil para migrations).
 - **ORM**: **Drizzle** com o driver `@neondatabase/serverless` (modo HTTP, `drizzle-orm/neon-http`)

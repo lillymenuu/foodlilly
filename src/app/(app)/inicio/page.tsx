@@ -21,7 +21,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-export const metadata: Metadata = { title: "Painel · foodlilly" };
+export const metadata: Metadata = { title: "Início · foodlilly" };
 
 // DADOS DE EXEMPLO: só para visualizar o layout e a paleta.
 // Serão substituídos por consultas ao banco depois do escopo aprovado.
@@ -38,17 +38,17 @@ const pct = new Intl.NumberFormat("pt-BR", { style: "percent", maximumFractionDi
 
 const MARGEM_MINIMA = 0.4;
 
-export default function PainelPage() {
+export default function InicioPage() {
   const margemMedia = receitas.reduce((s, r) => s + r.margem, 0) / receitas.length;
   const abaixo = receitas.filter((r) => r.margem < MARGEM_MINIMA).length;
 
   return (
     <>
       <PageHeader
-        title="Painel"
+        title="Início"
         description="Visão geral dos custos e preços do seu negócio."
       >
-        <Button variant="highlight" render={<Link href="/precificacao" />}>
+        <Button variant="highlight" render={<Link href="/precificar" />}>
           Calcular preço
           <ArrowRight data-icon="inline-end" />
         </Button>
