@@ -15,6 +15,8 @@ export type Campo<K extends string = string> = {
   inteiro?: boolean;
   /** Casas decimais fixas na exibição (2 para dinheiro). */
   casas?: number;
+  /** "moeda": formata ao digitar, com centavos fixos (1500 -> 15,00). */
+  mascara?: "moeda";
 };
 
 export type Grupo<K extends string = string> = {
@@ -37,5 +39,16 @@ export function campoMoeda<K extends string>(
   icone: LucideIcon,
   padrao: number,
 ): Campo<K> {
-  return { chave, rotulo, dica, icone, prefixo: "R$", casas: 2, padrao, min: 0, max: 10_000_000 };
+  return {
+    chave,
+    rotulo,
+    dica,
+    icone,
+    prefixo: "R$",
+    casas: 2,
+    mascara: "moeda",
+    padrao,
+    min: 0,
+    max: 10_000_000,
+  };
 }

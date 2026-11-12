@@ -16,7 +16,7 @@ import {
 import { useCamposNumericos, valoresIguais } from "@/components/formulario/use-campos-numericos";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { formatarMoeda, paraNumero, paraTexto } from "@/lib/numero-br";
+import { formatarMoeda, mascaraMoeda, paraNumero, paraTexto } from "@/lib/numero-br";
 
 import { salvarCusteio } from "./actions";
 import {
@@ -102,7 +102,8 @@ export function FormCusteio({
   const receita = form.numeros.receitaBruta ?? 0;
 
   function alterarExtra(id: string, campo: "descricao" | "valor", valor: string) {
-    setExtras((linhas) => linhas.map((l) => (l.id === id ? { ...l, [campo]: valor } : l)));
+    const texto = campo === "valor" ? mascaraMoeda(valor) : valor;
+    setExtras((linhas) => linhas.map((l) => (l.id === id ? { ...l, [campo]: texto } : l)));
     form.limparErro(`${id}.${campo}`);
   }
 
@@ -294,7 +295,7 @@ export function FormCusteio({
                   <InputUnidade
                     id={`${linha.id}-valor`}
                     prefixo="R$"
-                    inputMode="decimal"
+                    inputMode="numeric"
                     placeholder="0,00"
                     value={linha.valor}
                     onChange={(e) => alterarExtra(linha.id, "valor", e.target.value)}

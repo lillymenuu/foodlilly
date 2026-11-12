@@ -314,7 +314,8 @@ export function CampoNumero<K extends string>({
             name={campo.chave}
             prefixo={campo.prefixo}
             sufixo={campo.sufixo}
-            inputMode={campo.inteiro ? "numeric" : "decimal"}
+            inputMode={campo.inteiro || campo.mascara === "moeda" ? "numeric" : "decimal"}
+            placeholder={campo.mascara === "moeda" ? "0,00" : undefined}
             value={valor}
             onChange={(e) => onAlterar(campo.chave, e.target.value)}
             onBlur={() => onFormatar?.(campo.chave)}

@@ -26,6 +26,21 @@ export function paraNumero(texto: string): number | null {
   return /^\d+(\.\d+)?$/.test(normalizado) ? Number(normalizado) : NaN;
 }
 
+/** Máximo de dígitos da máscara de dinheiro (99.999.999,99). */
+const MAX_DIGITOS_MOEDA = 10;
+
+/**
+ * Máscara de dinheiro ao digitar: os dígitos entram pela direita, com
+ * centavos fixos ("1" -> "0,01", "1500" -> "15,00", "1500000" -> "15.000,00").
+ * Ignora tudo que não for dígito, então colar "R$ 1.500,50" também funciona.
+ */
+export function mascaraMoeda(texto: string) {
+  const digitos = texto.replace(/\D/g, "");
+  if (!digitos) return "";
+  const centavos = Number(digitos.replace(/^0+(?=\d)/, "").slice(0, MAX_DIGITOS_MOEDA));
+  return paraTexto(centavos / 100, 2);
+}
+
 export const formatarMoeda = (valor: number) =>
   valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 

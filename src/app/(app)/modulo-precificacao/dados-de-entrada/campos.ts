@@ -46,6 +46,7 @@ export const grupos: Grupo[] = [
         icone: Flame,
         prefixo: "R$",
         casas: 2,
+        mascara: "moeda",
         padrao: 120,
         min: 0,
         max: 5000,

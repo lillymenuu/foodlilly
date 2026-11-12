@@ -51,7 +51,7 @@ Referência: `src/app/(app)/modulo-precificacao/dados-de-entrada/`.
 Peças compartilhadas (usar em toda tela nova desse tipo):
 - `src/components/formulario/index.tsx`: `BannerFormulario` (título + progresso + Salvar), `CardGrupo` (grupo recolhível com progresso), `CampoNumero`, `InputUnidade`, `Dica`, `Aviso`, `BarraSalvarCelular`, `ModalSalvo`.
 - `src/components/formulario/use-campos-numericos.ts`: estado dos campos (texto, erros, valores, formatação ao sair do campo).
-- `src/lib/campos.ts` (tipo `Campo`, `campoMoeda`), `src/lib/numero-br.ts` (vírgula, R$, %), `src/lib/validacao.ts` (`esquemaNumeros` zod, `errosPorCampo`).
+- `src/lib/campos.ts` (tipo `Campo`, `campoMoeda` — já com máscara de dinheiro), `src/lib/numero-br.ts` (vírgula, R$, %, `mascaraMoeda`), `src/lib/validacao.ts` (`esquemaNumeros` zod, `errosPorCampo`).
 
 Em cada tela:
 - `campos.ts`: definição dos campos (rótulo, dica, unidade, padrão, limites). Tela, validação e banco leem daqui.

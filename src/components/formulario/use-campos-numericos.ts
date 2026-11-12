@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import type { Campo, ValoresDe } from "@/lib/campos";
-import { paraNumero, paraTexto } from "@/lib/numero-br";
+import { mascaraMoeda, paraNumero, paraTexto } from "@/lib/numero-br";
 
 /** Estado dos campos numéricos de um formulário: texto digitado, erros e valores. */
 export function useCamposNumericos<K extends string>(campos: Campo<K>[], inicial: ValoresDe<K>) {
@@ -16,7 +16,9 @@ export function useCamposNumericos<K extends string>(campos: Campo<K>[], inicial
   const [erros, setErros] = useState<Record<string, string>>({});
 
   function alterar(chave: K, valor: string) {
-    setTextos((t) => ({ ...t, [chave]: valor }));
+    const campo = campos.find((c) => c.chave === chave);
+    const texto = campo?.mascara === "moeda" ? mascaraMoeda(valor) : valor;
+    setTextos((t) => ({ ...t, [chave]: texto }));
     limparErro(chave);
   }
 
