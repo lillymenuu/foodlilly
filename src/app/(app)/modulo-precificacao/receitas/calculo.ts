@@ -177,7 +177,8 @@ export function calcularFicha(
     custoKg: peso ? custoTotal / (peso / 1000) : null,
     pesoPorcaoG,
     itens,
-    preco: ficha.tipo === "produto" ? calcularPreco(ficha, custoPorcao, cmvPorcao, pesoPorcaoG, ctx.parametros) : null,
+    // Todas as fichas têm preço (massas e recheios também podem ser vendidos).
+    preco: calcularPreco(ficha, custoPorcao, cmvPorcao, pesoPorcaoG, ctx.parametros),
   };
 }
 
