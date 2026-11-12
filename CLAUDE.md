@@ -37,7 +37,8 @@ Paleta definida em `src/app/globals.css` (tokens do tema; usar as classes, nunca
 - `src/app/page.tsx`: página pública (por enquanto, "em construção" com link para a prévia)
 - `src/app/(app)/`: área logada do cliente, com `layout.tsx` (menu lateral + cabeçalho com breadcrumb)
 - **Navegação: fonte única em `src/config/navegacao.ts`.** Menu lateral (`app-sidebar.tsx`), breadcrumb (`app-breadcrumb.tsx`) e páginas centrais dos módulos (`modulo-hub.tsx`) leem dela. Tela nova = item no config + `page.tsx` na rota.
-  - Módulos: Dashboard, Capacitação, Precificar, Estoque, Financeiro, Produção (Beta), Checklists, Modo funcionário (`/equipe`), Novidades. Assinatura fica no rodapé do menu.
+  - Módulos: Dashboard, Capacitação, Precificar, Estoque, Financeiro, Produção (Beta), Checklists, Modo funcionário, Novidades. Assinatura fica no rodapé do menu.
+  - **Rotas de módulos com subpáginas usam o prefixo `modulo-`**: pastas e URLs `/modulo-precificacao`, `/modulo-estoque`, `/modulo-financeiro`, `/modulo-producao`, `/modulo-funcionario` (ex.: `/modulo-precificacao/custeio`). Os endereços antigos redirecionam (`next.config.ts`).
   - Módulo com subpáginas tem página central (`<ModuloHub href="/modulo" />`) com cards; `grupo` separa seções; `bloqueado: true` mostra cadeado e "Em breve", sem link nem página.
   - Subpáginas ainda vazias usam `<EmBreve href="..." />` (título e descrição vêm do config).
   - `dashboard/` (antigo Início): banner de boas-vindas + cards de "Serviços disponíveis" (3 colunas a partir de `xl`). Nome do usuário e plano ainda fixos no código.
