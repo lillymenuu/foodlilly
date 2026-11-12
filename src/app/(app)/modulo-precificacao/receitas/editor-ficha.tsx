@@ -152,8 +152,8 @@ function estadoInicial(tipo: TipoFicha, f: FichaBase | null): Estado {
     rendimento: texto(f?.rendimento ?? 1),
     peso: texto(f?.pesoTotalG),
     tempo: texto(f?.tempoPreparoMin),
-    // Todas as fichas têm margem; sem valor salvo, começa com a margem padrão.
-    margem: texto(f?.margem ?? MARGEM_PADRAO),
+    // Só produtos têm margem; sem valor salvo, começa com a margem padrão.
+    margem: tipo === "produto" ? texto(f?.margem ?? MARGEM_PADRAO) : "",
     margemRevenda: texto(f?.margemRevenda),
     itens: f?.itens ?? [],
     passos: f?.modoPreparo ?? [],
@@ -343,7 +343,7 @@ export function EditorFicha(props: PropsEditor) {
     if (tipo === "produto" && !peso) e.pesoTotalG = "Informe o peso total.";
     if (estado.tempo.trim() && (tempo == null || tempo < 0))
       e.tempoPreparoMin = "Tempo inválido.";
-    if (margem == null || margem < 0 || margem > 95)
+    if (tipo === "produto" && (margem == null || margem < 0 || margem > 95))
       e.margem = "Use de 0 a 95%.";
     if (
       estado.margemRevenda.trim() &&
@@ -363,8 +363,8 @@ export function EditorFicha(props: PropsEditor) {
       rendimento: rendimento!,
       pesoTotalG: peso,
       tempoPreparoMin: tempo == null ? null : Math.round(tempo),
-      margem,
-      margemRevenda,
+      margem: tipo === "produto" ? margem : null,
+      margemRevenda: tipo === "produto" ? margemRevenda : null,
       modoPreparo: estado.passos,
       itens: estado.itens,
     };
@@ -404,6 +404,21 @@ export function EditorFicha(props: PropsEditor) {
   }
 
   const p = resultado.preco;
+  const pesoCampo = (
+    <CampoNumeroFicha
+      id="peso"
+      rotulo="Peso total"
+      icone={Scale}
+      sufixo="g"
+      valor={estado.peso}
+      erro={erros.pesoTotalG}
+      pendente={tipo === "produto" && !estado.peso.trim()}
+      dica={
+        tipo === "produto" ? "Peso do produto pronto." : "Peso final pronto."
+      }
+      onAlterar={(v) => set("peso", v)}
+    />
+  );
   /** Sem nenhum item: os custos aparecem como "—", como na referência. */
   const vazia = estado.itens.length === 0;
   const margemNum = numeroOuNull(estado.margem) ?? 0;
@@ -415,17 +430,14 @@ export function EditorFicha(props: PropsEditor) {
     tipo === "produto" && !estado.peso.trim() && "peso total",
     estado.itens.length === 0 && "composição",
   ].filter(Boolean) as string[];
+  // Selo só nos produtos (classificação da margem).
   const selo =
     tipo === "produto"
       ? {
           ...classificarMargem(margemNum),
           dica: "Classificação da margem de lucro",
         }
-      : {
-          rotulo: "Custo médio",
-          classe: "bg-highlight text-highlight-foreground",
-          dica: "Custos calculados pelo custo médio dos insumos",
-        };
+      : null;
   const FORM = "form-ficha";
 
   return (
@@ -440,15 +452,17 @@ export function EditorFicha(props: PropsEditor) {
             <div className="min-w-0 flex-1">
               <p className="flex flex-wrap items-center gap-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                 Ficha técnica · {info.singular}
-                <span
-                  className={cn(
-                    "rounded-full px-2 py-0.5 text-[10px] tracking-normal normal-case",
-                    selo.classe,
-                  )}
-                  title={selo.dica}
-                >
-                  {selo.rotulo}
-                </span>
+                {selo && (
+                  <span
+                    className={cn(
+                      "rounded-full px-2 py-0.5 text-[10px] tracking-normal normal-case",
+                      selo.classe,
+                    )}
+                    title={selo.dica}
+                  >
+                    {selo.rotulo}
+                  </span>
+                )}
               </p>
               <label htmlFor="ficha-nome" className="sr-only">
                 Nome
@@ -501,15 +515,14 @@ export function EditorFicha(props: PropsEditor) {
             </button>
           </div>
 
-          {/* Campos editáveis (receitas têm também o tempo de preparo) */}
+          {/* Campos editáveis: produto tem margens; receita, o tempo de preparo */}
           <div
             className={cn(
               "grid grid-cols-2 gap-3",
-              tipo === "produto"
-                ? "lg:grid-cols-4"
-                : "sm:grid-cols-3 lg:grid-cols-5",
+              tipo === "produto" ? "lg:grid-cols-4" : "sm:grid-cols-3",
             )}
           >
+            {tipo !== "produto" && pesoCampo}
             <CampoNumeroFicha
               id="rendimento"
               rotulo="Rendimento"
@@ -519,53 +532,42 @@ export function EditorFicha(props: PropsEditor) {
               erro={erros.rendimento}
               onAlterar={(v) => set("rendimento", v)}
             />
-            <CampoNumeroFicha
-              id="peso"
-              rotulo="Peso total"
-              icone={Scale}
-              sufixo="g"
-              valor={estado.peso}
-              erro={erros.pesoTotalG}
-              pendente={tipo === "produto" && !estado.peso.trim()}
-              dica={
-                tipo === "produto"
-                  ? "Peso do produto pronto."
-                  : "Peso final pronto."
-              }
-              onAlterar={(v) => set("peso", v)}
-            />
-            <CampoNumeroFicha
-              id="margem"
-              rotulo="Margem"
-              icone={HandCoins}
-              sufixo="%"
-              valor={estado.margem}
-              erro={erros.margem}
-              onAlterar={(v) => set("margem", v)}
-            >
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full bg-highlight"
-                  style={{ width: `${Math.min(100, margemNum)}%` }}
+            {tipo === "produto" ? (
+              <>
+                {pesoCampo}
+                <CampoNumeroFicha
+                  id="margem"
+                  rotulo="Margem"
+                  icone={HandCoins}
+                  sufixo="%"
+                  valor={estado.margem}
+                  erro={erros.margem}
+                  onAlterar={(v) => set("margem", v)}
+                >
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-highlight"
+                      style={{ width: `${Math.min(100, margemNum)}%` }}
+                    />
+                  </div>
+                </CampoNumeroFicha>
+                <CampoNumeroFicha
+                  id="margemRevenda"
+                  rotulo="Margem revenda"
+                  icone={Store}
+                  sufixo="%"
+                  valor={estado.margemRevenda}
+                  placeholder={String(MARGEM_REVENDA_PADRAO)}
+                  dica={
+                    estado.margemRevenda.trim()
+                      ? undefined
+                      : `Padrão: ${MARGEM_REVENDA_PADRAO}%`
+                  }
+                  erro={erros.margemRevenda}
+                  onAlterar={(v) => set("margemRevenda", v)}
                 />
-              </div>
-            </CampoNumeroFicha>
-            <CampoNumeroFicha
-              id="margemRevenda"
-              rotulo="Margem revenda"
-              icone={Store}
-              sufixo="%"
-              valor={estado.margemRevenda}
-              placeholder={String(MARGEM_REVENDA_PADRAO)}
-              dica={
-                estado.margemRevenda.trim()
-                  ? undefined
-                  : `Padrão: ${MARGEM_REVENDA_PADRAO}%`
-              }
-              erro={erros.margemRevenda}
-              onAlterar={(v) => set("margemRevenda", v)}
-            />
-            {tipo !== "produto" && (
+              </>
+            ) : (
               <CampoNumeroFicha
                 id="tempo"
                 rotulo="Tempo de preparo"
@@ -579,93 +581,106 @@ export function EditorFicha(props: PropsEditor) {
           </div>
 
           {/* Valores calculados, na ordem da referência */}
-          <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            <Numero
-              rotulo="Custo total"
-              valor={vazia ? "—" : formatarMoeda(resultado.custoTotal)}
-            />
-            <Numero
-              rotulo="Preço venda"
-              valor={p?.valido ? formatarMoeda(p.preco) : "—"}
-              destaque="sucesso"
-            />
-            <Numero
-              rotulo="Lucro/venda"
-              valor={p?.valido ? formatarMoeda(p.lucro) : "—"}
-            >
-              {p?.valido && <Selo {...classificarMargem(margemNum)} />}
-            </Numero>
-            <Numero
-              rotulo="Custo fabricação"
-              valor={p ? formatarMoeda(p.fabricacao) : "—"}
-              dica={`Inclui ${formatarPercentual(props.parametros.aliquotaFixa)} de custo fixo`}
-            />
-            <Numero
-              rotulo="CMV"
-              valor={vazia || !p?.valido ? "—" : formatarPercentual(p.cmvPct)}
-              dica={vazia ? undefined : formatarMoeda(resultado.cmvPorcao)}
-              destaque="sucesso"
-            />
-            <div className="rounded-xl bg-muted/60 p-3">
-              <dt className="text-xs text-muted-foreground">Marketplace</dt>
-              {!vazia && p?.valido && p.marketplace.length ? (
-                <dd className="mt-1 flex flex-col gap-0.5 text-sm">
-                  {p.marketplace.map((m) => (
-                    <span key={m.nome} className="flex justify-between gap-2">
-                      <span className="text-muted-foreground">{m.nome}</span>
-                      <strong className="tabular-nums">
-                        {formatarMoeda(m.preco)}
-                      </strong>
-                    </span>
-                  ))}
-                </dd>
-              ) : (
-                <dd className="mt-1 text-sm text-muted-foreground">
-                  {p && !p.marketplace.length && !vazia
-                    ? "Configure as taxas em Dados de entrada."
-                    : "Preços de marketplace aparecem ao montar a ficha."}
-                </dd>
-              )}
-            </div>
-            <Numero
-              rotulo="Preço por kg"
-              valor={p?.valido && p.precoKg ? formatarMoeda(p.precoKg) : "—"}
-            />
-            <Numero
-              rotulo="Custo/porção"
-              valor={vazia ? "—" : formatarMoeda(resultado.custoPorcao)}
-            />
-            <Numero
-              rotulo="Preço revenda"
-              valor={p?.valido ? formatarMoeda(p.revenda) : "—"}
-              dica={`Margem ${estado.margemRevenda.trim() || MARGEM_REVENDA_PADRAO}%`}
-            />
-            {tipo !== "produto" && (
-              <>
-                <Numero
-                  rotulo="Custo/kg"
-                  valor={
-                    resultado.custoKg != null && !vazia
-                      ? formatarMoeda(resultado.custoKg)
-                      : "—"
-                  }
-                  dica={
-                    resultado.custoKg == null
-                      ? "Informe o peso total"
-                      : undefined
-                  }
-                />
-                <Numero
-                  rotulo="Peso/porção"
-                  valor={
-                    resultado.pesoPorcaoG != null
-                      ? `${paraTexto(Math.round(resultado.pesoPorcaoG))} g`
-                      : "—"
-                  }
-                />
-              </>
-            )}
-          </dl>
+          {tipo === "produto" ? (
+            <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              <Numero
+                rotulo="Custo total"
+                valor={vazia ? "—" : formatarMoeda(resultado.custoTotal)}
+              />
+              <Numero
+                rotulo="Preço venda"
+                valor={p?.valido ? formatarMoeda(p.preco) : "—"}
+                destaque="sucesso"
+              />
+              <Numero
+                rotulo="Lucro/venda"
+                valor={p?.valido ? formatarMoeda(p.lucro) : "—"}
+              >
+                {p?.valido && <Selo {...classificarMargem(margemNum)} />}
+              </Numero>
+              <Numero
+                rotulo="Custo fabricação"
+                valor={p ? formatarMoeda(p.fabricacao) : "—"}
+                dica={`Inclui ${formatarPercentual(props.parametros.aliquotaFixa)} de custo fixo`}
+              />
+              <Numero
+                rotulo="CMV"
+                valor={vazia || !p?.valido ? "—" : formatarPercentual(p.cmvPct)}
+                dica={vazia ? undefined : formatarMoeda(resultado.cmvPorcao)}
+                destaque="sucesso"
+              />
+              <div className="rounded-xl bg-muted/60 p-3">
+                <dt className="text-xs text-muted-foreground">Marketplace</dt>
+                {!vazia && p?.valido && p.marketplace.length ? (
+                  <dd className="mt-1 flex flex-col gap-0.5 text-sm">
+                    {p.marketplace.map((m) => (
+                      <span key={m.nome} className="flex justify-between gap-2">
+                        <span className="text-muted-foreground">{m.nome}</span>
+                        <strong className="tabular-nums">
+                          {formatarMoeda(m.preco)}
+                        </strong>
+                      </span>
+                    ))}
+                  </dd>
+                ) : (
+                  <dd className="mt-1 text-sm text-muted-foreground">
+                    {p && !p.marketplace.length && !vazia
+                      ? "Configure as taxas em Dados de entrada."
+                      : "Preços de marketplace aparecem ao montar a ficha."}
+                  </dd>
+                )}
+              </div>
+              <Numero
+                rotulo="Preço por kg"
+                valor={p?.valido && p.precoKg ? formatarMoeda(p.precoKg) : "—"}
+              />
+              <Numero
+                rotulo="Custo/porção"
+                valor={vazia ? "—" : formatarMoeda(resultado.custoPorcao)}
+              />
+              <Numero
+                rotulo="Preço revenda"
+                valor={p?.valido ? formatarMoeda(p.revenda) : "—"}
+                dica={`Margem ${estado.margemRevenda.trim() || MARGEM_REVENDA_PADRAO}%`}
+              />
+            </dl>
+          ) : (
+            <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+              <Numero
+                rotulo="Custo total"
+                valor={vazia ? "—" : formatarMoeda(resultado.custoTotal)}
+              />
+              <Numero
+                rotulo="Custo/kg"
+                valor={
+                  resultado.custoKg != null && !vazia
+                    ? formatarMoeda(resultado.custoKg)
+                    : "—"
+                }
+                dica={
+                  resultado.custoKg == null ? "Informe o peso total" : undefined
+                }
+              />
+              <Numero
+                rotulo="CMV"
+                valor={vazia ? "—" : formatarMoeda(resultado.cmvPorcao)}
+                dica="Ingredientes por porção"
+                destaque="sucesso"
+              />
+              <Numero
+                rotulo="Peso/porção"
+                valor={
+                  resultado.pesoPorcaoG != null
+                    ? `${paraTexto(Math.round(resultado.pesoPorcaoG))} g`
+                    : "—"
+                }
+              />
+              <Numero
+                rotulo="Custo/porção"
+                valor={vazia ? "—" : formatarMoeda(resultado.custoPorcao)}
+              />
+            </dl>
+          )}
           {p && !p.valido && (
             <Aviso tipo="erro">
               Margem + imposto + taxa do cartão passam de 100%. Diminua a margem

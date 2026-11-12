@@ -124,8 +124,8 @@ export async function salvarFicha(
       rendimento: d.rendimento,
       pesoTotalG: d.pesoTotalG,
       tempoPreparoMin: d.tempoPreparoMin,
-      margem: d.margem,
-      margemRevenda: d.margemRevenda,
+      margem: d.tipo === "produto" ? d.margem : null,
+      margemRevenda: d.tipo === "produto" ? d.margemRevenda : null,
       modoPreparo: d.modoPreparo,
       atualizadoEm: new Date(),
     };
