@@ -8,6 +8,8 @@ export const negocios = pgTable("negocios", {
   id: uuid().primaryKey().defaultRandom(),
   nome: text().notNull(),
   criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+  /** Quando os equipamentos padrão foram criados (null = ainda não). Evita recriá-los se o cliente excluir. */
+  equipamentosPadraoEm: timestamp("equipamentos_padrao_em", { withTimezone: true }),
 });
 
 /**
@@ -88,4 +90,24 @@ export const custosExtras = pgTable(
     ordem: integer().notNull().default(0),
   },
   (t) => [index("custos_extras_negocio_idx").on(t.negocioId)],
+);
+
+/** Precificar > Equipamentos: máquinas usadas no preparo (custo de energia ou gás). */
+export const equipamentos = pgTable(
+  "equipamentos",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    negocioId: uuid("negocio_id")
+      .notNull()
+      .references(() => negocios.id, { onDelete: "cascade" }),
+    nome: text().notNull(),
+    tipo: text({ enum: ["eletrico", "gas"] }).notNull(),
+    /** Elétricos: potência em watts. */
+    potenciaW: numeric("potencia_w", { precision: 10, scale: 2, mode: "number" }),
+    /** A gás: consumo em kg por hora. */
+    vazaoKgH: numeric("vazao_kg_h", { precision: 10, scale: 4, mode: "number" }),
+    criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+    atualizadoEm: timestamp("atualizado_em", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("equipamentos_negocio_idx").on(t.negocioId)],
 );
