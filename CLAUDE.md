@@ -83,6 +83,7 @@ Pasta `src/app/(app)/modulo-precificacao/receitas/`. Rotas: central `/receitas`,
 - `<Button render={<Link />}>`: o `Button` já passa `nativeButton={false}` sozinho quando há `render`; sem isso o Base UI avisa e dá erro de hidratação.
 - O menu lateral e o breadcrumb usam `usePathname` e ficam em `<Suspense>` no layout (exigência das rotas dinâmicas com Cache Components). Por isso o `Sidebar` lê `useIsMobile()` direto, e não do provedor (senão dá erro de hidratação no celular).
 - Em páginas com `params`, ler o parâmetro **dentro** do `<Suspense>` (passar a promise para o componente async).
+- **Estado preservado entre navegações:** com Cache Components o Next esconde a página (`<Activity>`) em vez de desmontar, e o `useState` continua. Formulários de "novo cadastro" devem se limpar num `useLayoutEffect` de limpeza (ver `editor-ficha.tsx`); modais também devem fechar ao esconder. Guia: `node_modules/next/dist/docs/01-app/02-guides/preserving-ui-state.md`.
 
 - Área do SuperAdmin: a criar (ex.: `src/app/(admin)/admin/`)
 - **Banco**: PostgreSQL 18 no **Neon**, projeto `dblillyfood` (banco `neondb`), criado pela integração Vercel ↔ Neon e conectado ao projeto `foodlilly` na Vercel. Acesso pela variável `DATABASE_URL` (connection string *pooled*). A integração também cria `DATABASE_URL_UNPOOLED` (conexão direta, útil para migrations).

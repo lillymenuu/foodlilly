@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -195,6 +195,24 @@ export function EditorFicha(props: PropsEditor) {
     setEstado((e) => ({ ...e, [chave]: valor }));
     setErros((x) => ({ ...x, [chave === "peso" ? "pesoTotalG" : chave]: "" }));
   };
+
+  // O Next 16 (Cache Components) não desmonta a página ao navegar: ela fica
+  // escondida (<Activity>) com o estado preservado. Ao esconder:
+  // - ficha NOVA volta em branco (cada "Novo" começa do zero);
+  // - modais fecham (ficha existente mantém as edições como rascunho).
+  useLayoutEffect(() => {
+    return () => {
+      setModal(null);
+      if (!ficha) {
+        const inicial = estadoInicial(tipoInicial, null);
+        setEstado(inicial);
+        setSalvo(JSON.stringify(inicial));
+        setErros({});
+        setErroGeral(undefined);
+        setNovoPasso("");
+      }
+    };
+  }, [ficha, tipoInicial]);
 
   // Avisa antes de sair da página com alterações não salvas.
   useEffect(() => {
