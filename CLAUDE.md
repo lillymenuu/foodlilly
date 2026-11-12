@@ -43,6 +43,18 @@ Paleta definida em `src/app/globals.css` (tokens do tema; usar as classes, nunca
   - `dashboard/` (antigo Início): banner de boas-vindas + cards de "Serviços disponíveis" (3 colunas a partir de `xl`). Nome do usuário e plano ainda fixos no código.
 - Menu: só um módulo aberto por vez; no celular, escolher uma subpágina fecha a gaveta.
 - Inspiração das funcionalidades: menu da referência. Nomes de marca dela não são usados (ex.: "Deu Check" virou "Checklists").
+## Telas com dados (padrão)
+
+Referência: `src/app/(app)/precificar/dados-de-entrada/`.
+
+- `campos.ts`: definição dos campos (rótulo, dica, unidade, padrão, limites). Tela, validação e banco leem daqui.
+- `page.tsx` (Server Component): `<Suspense>` + componente async que chama `await connection()` e lê o banco (exigência do Cache Components).
+- `actions.ts` (`"use server"`): valida com **zod**, obtém o negócio com `obterNegocioAtualId()` (nunca confiar em id vindo do navegador), grava com `db.batch([...])` e chama `refresh()`.
+- Formulário (Client Component): números em pt-BR (vírgula), erro por campo, botão Salvar desabilitado sem alterações, barra fixa no rodapé no celular, modal de sucesso.
+- **Negócio atual:** `src/lib/negocio-atual.ts` devolve um negócio de demonstração fixo até a autenticação existir. Ao criar o login, só essa função muda.
+- **Tabelas:** `negocios` (o cliente) e `dados_entrada` (1 linha por negócio). Toda tabela de dados do cliente tem `negocio_id`.
+- O banco do Neon é o **mesmo** em local e produção: dados criados em testes devem ser apagados depois.
+
 - Área do SuperAdmin: a criar (ex.: `src/app/(admin)/admin/`)
 - **Banco**: PostgreSQL 18 no **Neon**, projeto `dblillyfood` (banco `neondb`), criado pela integração Vercel ↔ Neon e conectado ao projeto `foodlilly` na Vercel. Acesso pela variável `DATABASE_URL` (connection string *pooled*). A integração também cria `DATABASE_URL_UNPOOLED` (conexão direta, útil para migrations).
 - **ORM**: **Drizzle** com o driver `@neondatabase/serverless` (modo HTTP, `drizzle-orm/neon-http`)
