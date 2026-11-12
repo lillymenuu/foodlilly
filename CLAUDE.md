@@ -60,7 +60,7 @@ Em cada tela:
 - Formulário (Client Component): números em pt-BR (vírgula), erro por campo, botão Salvar desabilitado sem alterações, barra fixa no rodapé no celular, modal de sucesso.
 - **Negócio atual:** `src/lib/negocio-atual.ts` devolve um negócio de demonstração fixo até a autenticação existir. Ao criar o login, só essa função muda.
 - **Tabelas:** `negocios` (o cliente), `dados_entrada` e `custeio` (1 linha por negócio), `custos_extras` (lista, substituída inteira a cada salvamento). Toda tabela de dados do cliente tem `negocio_id`.
-- O banco do Neon é o **mesmo** em local e produção: dados criados em testes devem ser apagados depois.
+- O banco do Neon é o **mesmo** em local e produção, e o dono do projeto também salva dados pelo site. Testes automatizados que gravam no banco: antes de começar, conferir se já existem dados (ex.: `atualizado_em`) e **não sobrescrever nem apagar dados que não foram criados pelo teste**; se o banco estiver vazio, apagar ao final o que o teste criou.
 
 - Área do SuperAdmin: a criar (ex.: `src/app/(admin)/admin/`)
 - **Banco**: PostgreSQL 18 no **Neon**, projeto `dblillyfood` (banco `neondb`), criado pela integração Vercel ↔ Neon e conectado ao projeto `foodlilly` na Vercel. Acesso pela variável `DATABASE_URL` (connection string *pooled*). A integração também cria `DATABASE_URL_UNPOOLED` (conexão direta, útil para migrations).
