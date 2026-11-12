@@ -50,8 +50,11 @@ export const formatarMoedaPrecisa = (valor: number) =>
     ? valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 4, maximumFractionDigits: 4 })
     : formatarMoeda(valor);
 
-export const formatarPercentual = (fracao: number, casas = 1) =>
+/** 0,431 -> "43,1%". Com `sinal`, positivos ganham "+" ("+1,0%"). */
+export const formatarPercentual = (fracao: number, casas = 1, sinal = false) =>
+  (sinal && fracao > 0 ? "+" : "") +
   (fracao * 100).toLocaleString("pt-BR", {
     minimumFractionDigits: casas,
     maximumFractionDigits: casas,
-  }) + "%";
+  }) +
+  "%";

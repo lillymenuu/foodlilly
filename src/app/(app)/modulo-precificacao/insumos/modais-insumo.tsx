@@ -9,7 +9,7 @@ import { InputUnidade } from "@/components/formulario";
 import { notificar } from "@/components/notificacoes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { formatarMoeda, mascaraMoeda, paraNumero, paraTexto } from "@/lib/numero-br";
+import { formatarMoeda, formatarPercentual, mascaraMoeda, paraNumero, paraTexto } from "@/lib/numero-br";
 
 import { buscarCodigoBarras, criarInsumo, editarInsumo, excluirInsumo } from "./actions";
 import { LeitorCodigo, leitorDisponivel } from "./leitor-codigo";
@@ -102,7 +102,16 @@ export function ModalInsumo({
   const nPerda = paraNumero(perda) ?? 0;
   const previa =
     unidade && nVolume && nCusto && !Number.isNaN(nVolume) && !Number.isNaN(nCusto) && !Number.isNaN(nPerda) && nPerda < 100
-      ? { unidade, aproveitavel: volumeAproveitavel(nVolume, nPerda), ...custosUnitarios({ volume: nVolume, custo: nCusto, perda: nPerda }) }
+      ? (() => {
+          const custos = custosUnitarios({ volume: nVolume, custo: nCusto, perda: nPerda });
+          return {
+            unidade,
+            aproveitavel: volumeAproveitavel(nVolume, nPerda),
+            ...custos,
+            // Quanto o custo real ficou acima do custo sem perda (10% de perda = +11,1%).
+            aumento: custos.semPerda > 0 ? custos.comPerda / custos.semPerda - 1 : 0,
+          };
+        })()
       : null;
 
   function enviar() {
@@ -337,6 +346,12 @@ export function ModalInsumo({
                 <dt className="text-muted-foreground">Custo real (com perda)</dt>
                 <dd className="font-semibold text-success tabular-nums">
                   {custoUnitario(previa.comPerda, previa.unidade)}
+                </dd>
+              </div>
+              <div className="mt-1 flex justify-between gap-4 border-t border-primary/15 pt-2">
+                <dt className="text-muted-foreground">Aumento no custo</dt>
+                <dd className={`font-semibold tabular-nums ${previa.aumento > 0 ? "text-amber-700" : "text-muted-foreground"}`}>
+                  {formatarPercentual(previa.aumento, 1, true)}
                 </dd>
               </div>
             </dl>
