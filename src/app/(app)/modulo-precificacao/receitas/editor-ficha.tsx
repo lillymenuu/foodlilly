@@ -81,7 +81,8 @@ export type PropsEditor = {
   parametros: Parametros;
   /** Fichas que podem ser vinculadas (já sem as que criariam ciclo). */
   fichasRef: (ResumoRef & { id: string })[];
-  categorias: CategoriaFicha[];
+  /** Categorias por tipo (a receita pode alternar entre massa e recheio). */
+  categoriasPorTipo: Record<TipoFicha, CategoriaFicha[]>;
   usadoEm: {
     id: string;
     nome: string;
@@ -138,7 +139,8 @@ type Estado = {
   categoriaId: string;
   rendimento: string;
   peso: string;
-  tempo: string;
+  /** Massa ou recheio podem ser trocados; produto fica fixo. */
+  tipo: TipoFicha;
   margem: string;
   margemRevenda: string;
   itens: ItemFicha[];
@@ -151,7 +153,7 @@ function estadoInicial(tipo: TipoFicha, f: FichaBase | null): Estado {
     categoriaId: f?.categoriaId ?? "",
     rendimento: texto(f?.rendimento ?? 1),
     peso: texto(f?.pesoTotalG),
-    tempo: texto(f?.tempoPreparoMin),
+    tipo: f?.tipo ?? tipo,
     // Só produtos têm margem; sem valor salvo, começa com a margem padrão.
     margem: tipo === "produto" ? texto(f?.margem ?? MARGEM_PADRAO) : "",
     margemRevenda: texto(f?.margemRevenda),
@@ -161,13 +163,14 @@ function estadoInicial(tipo: TipoFicha, f: FichaBase | null): Estado {
 }
 
 export function EditorFicha(props: PropsEditor) {
-  const { tipo, ficha } = props;
-  const info = INFO_TIPO[tipo];
+  const { tipo: tipoInicial, ficha } = props;
   const router = useRouter();
-  const [estado, setEstado] = useState(() => estadoInicial(tipo, ficha));
+  const [estado, setEstado] = useState(() => estadoInicial(tipoInicial, ficha));
   const [salvo, setSalvo] = useState(() =>
-    JSON.stringify(estadoInicial(tipo, ficha)),
+    JSON.stringify(estadoInicial(tipoInicial, ficha)),
   );
+  const tipo = estado.tipo;
+  const info = INFO_TIPO[tipo];
   const [erros, setErros] = useState<Record<string, string>>({});
   const [erroGeral, setErroGeral] = useState<string>();
   const [salvando, startSalvar] = useTransition();
@@ -178,9 +181,9 @@ export function EditorFicha(props: PropsEditor) {
     | { tipo: "excluir" }
     | null
   >(null);
-  const [categoriasCriadas, setCategoriasCriadas] = useState<CategoriaFicha[]>(
-    [],
-  );
+  const [categoriasCriadas, setCategoriasCriadas] = useState<
+    (CategoriaFicha & { tipo: TipoFicha })[]
+  >([]);
   const [novoPasso, setNovoPasso] = useState("");
 
   // Ficha nova só conta como alterada depois que algo é preenchido.
@@ -225,12 +228,25 @@ export function EditorFicha(props: PropsEditor) {
     (id) => refs.get(id),
   );
 
+  const doTipo = props.categoriasPorTipo[tipo] ?? [];
   const categorias = [
-    ...props.categorias,
+    ...doTipo,
     ...categoriasCriadas.filter(
-      (c) => !props.categorias.some((x) => x.id === c.id),
+      (c) => c.tipo === tipo && !doTipo.some((x) => x.id === c.id),
     ),
   ].sort(compararNome);
+
+  /** Tempo de preparo = minutos de mão de obra + equipamentos (como na referência). */
+  const tempoPreparo = estado.itens
+    .filter((i) => i.tipo === "mao_obra" || i.tipo === "equipamento")
+    .reduce((s, i) => s + i.quantidade, 0);
+
+  function trocarTipo(novo: TipoFicha) {
+    if (novo === tipo) return;
+    // Cada tipo tem as próprias categorias: a escolhida deixa de valer.
+    setEstado((e) => ({ ...e, tipo: novo, categoriaId: "" }));
+    setErros((x) => ({ ...x, categoriaId: "" }));
+  }
 
   function opcoesDe(item: TipoItem): OpcaoItem[] {
     const unidade = (u: string) => (u === "unidade" ? "un." : u);
@@ -333,16 +349,15 @@ export function EditorFicha(props: PropsEditor) {
     const e: Record<string, string> = {};
     const rendimento = numeroOuNull(estado.rendimento);
     const peso = numeroOuNull(estado.peso);
-    const tempo = numeroOuNull(estado.tempo);
     const margem = numeroOuNull(estado.margem);
     const margemRevenda = numeroOuNull(estado.margemRevenda);
     if (!estado.nome.trim()) e.nome = "Informe o nome.";
     if (!rendimento || rendimento <= 0) e.rendimento = "Informe o rendimento.";
     if (estado.peso.trim() && (!peso || peso <= 0))
       e.pesoTotalG = "Peso inválido.";
-    if (tipo === "produto" && !peso) e.pesoTotalG = "Informe o peso total.";
-    if (estado.tempo.trim() && (tempo == null || tempo < 0))
-      e.tempoPreparoMin = "Tempo inválido.";
+    if (!peso) e.pesoTotalG = "Informe o peso total.";
+    if (tipo !== "produto" && !estado.categoriaId)
+      e.categoriaId = "Escolha uma categoria.";
     if (tipo === "produto" && (margem == null || margem < 0 || margem > 95))
       e.margem = "Use de 0 a 95%.";
     if (
@@ -362,7 +377,7 @@ export function EditorFicha(props: PropsEditor) {
       categoriaId: estado.categoriaId || null,
       rendimento: rendimento!,
       pesoTotalG: peso,
-      tempoPreparoMin: tempo == null ? null : Math.round(tempo),
+      tempoPreparoMin: Math.round(tempoPreparo),
       margem: tipo === "produto" ? margem : null,
       margemRevenda: tipo === "produto" ? margemRevenda : null,
       modoPreparo: estado.passos,
@@ -427,7 +442,8 @@ export function EditorFicha(props: PropsEditor) {
   // O que falta para a ficha fazer sentido (aviso abaixo do Salvar).
   const pendencias = [
     !estado.nome.trim() && "nome",
-    tipo === "produto" && !estado.peso.trim() && "peso total",
+    !estado.peso.trim() && "peso total",
+    tipo !== "produto" && !estado.categoriaId && "categoria",
     estado.itens.length === 0 && "composição",
   ].filter(Boolean) as string[];
   // Selo só nos produtos (classificação da margem).
@@ -486,6 +502,33 @@ export function EditorFicha(props: PropsEditor) {
             </div>
           </div>
 
+          {/* Tipo da receita: massa ou recheio */}
+          {tipo !== "produto" && (
+            <div
+              role="radiogroup"
+              aria-label="Tipo da receita"
+              className="inline-flex w-fit rounded-xl bg-muted p-1"
+            >
+              {(["massa", "recheio"] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  role="radio"
+                  aria-checked={tipo === t}
+                  onClick={() => trocarTipo(t)}
+                  className={cn(
+                    "rounded-lg px-4 py-2 text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                    tipo === t
+                      ? "bg-highlight text-highlight-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {INFO_TIPO[t].titulo.slice(0, -1)}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Categoria: alinhada à esquerda com os cards abaixo */}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             <div className="w-full sm:w-72">
@@ -496,14 +539,19 @@ export function EditorFicha(props: PropsEditor) {
                 id="ficha-categoria"
                 value={estado.categoriaId}
                 onChange={(e) => set("categoriaId", e.target.value)}
+                aria-invalid={Boolean(erros.categoriaId)}
               >
-                <option value="">Sem categoria</option>
+                {/* Receita exige categoria; produto pode ficar sem. */}
+                <option value="" disabled={tipo !== "produto"}>
+                  {tipo === "produto" ? "Sem categoria" : "Selecione uma categoria"}
+                </option>
                 {categorias.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.nome}
                   </option>
                 ))}
               </SelectNativo>
+              {erros.categoriaId && <p className="mt-1 text-xs text-destructive">{erros.categoriaId}</p>}
             </div>
             <button
               type="button"
@@ -568,15 +616,24 @@ export function EditorFicha(props: PropsEditor) {
                 />
               </>
             ) : (
-              <CampoNumeroFicha
-                id="tempo"
-                rotulo="Tempo de preparo"
-                icone={Clock}
-                sufixo="min"
-                valor={estado.tempo}
-                erro={erros.tempoPreparoMin}
-                onAlterar={(v) => set("tempo", v)}
-              />
+              <div
+                className="rounded-xl bg-muted/60 p-3"
+                title="Soma dos minutos de mão de obra e equipamentos"
+              >
+                <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                  <Clock className="size-3.5" />
+                  Tempo de preparo
+                </p>
+                <p className="mt-1 text-xl font-bold tabular-nums">
+                  {paraTexto(tempoPreparo)}{" "}
+                  <span className="text-xs font-normal text-muted-foreground">
+                    min
+                  </span>
+                </p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Mão de obra + equipamentos.
+                </p>
+              </div>
             )}
           </div>
 
@@ -719,6 +776,14 @@ export function EditorFicha(props: PropsEditor) {
                   Produtos:{" "}
                   <strong className="text-foreground">
                     {contagem(["produto"])}
+                  </strong>
+                </span>
+              )}
+              {tipo !== "produto" && (
+                <span>
+                  Preparo:{" "}
+                  <strong className="text-foreground">
+                    {paraTexto(tempoPreparo)} min
                   </strong>
                 </span>
               )}
@@ -1068,7 +1133,10 @@ export function EditorFicha(props: PropsEditor) {
             setModal(null);
             notificar.sucesso(titulo, descricao);
             if (criada) {
-              setCategoriasCriadas((c) => [...c, { ...criada, fichas: 0 }]);
+              setCategoriasCriadas((c) => [
+                ...c,
+                { ...criada, fichas: 0, tipo },
+              ]);
               set("categoriaId", criada.id);
             }
           }}

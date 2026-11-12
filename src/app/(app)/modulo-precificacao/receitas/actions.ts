@@ -85,9 +85,17 @@ export async function salvarFicha(
     return { ok: false, mensagem: "Confira os campos destacados.", erros: errosPorCampo(validado.error) };
   }
   const d = validado.data;
-  if (d.tipo === "produto" && !d.pesoTotalG) {
-    return { ok: false, mensagem: "Informe o peso total do produto.", erros: { pesoTotalG: "Informe o peso total." } };
+  if (!d.pesoTotalG) {
+    return { ok: false, mensagem: "Informe o peso total.", erros: { pesoTotalG: "Informe o peso total." } };
   }
+  // Receitas (massa/recheio) precisam de categoria, como na referência.
+  if (d.tipo !== "produto" && !d.categoriaId) {
+    return { ok: false, mensagem: "Escolha uma categoria.", erros: { categoriaId: "Escolha uma categoria." } };
+  }
+  // Tempo de preparo = minutos de mão de obra + equipamentos (calculado, não digitado).
+  d.tempoPreparoMin = Math.round(
+    d.itens.filter((i) => i.tipo === "mao_obra" || i.tipo === "equipamento").reduce((s, i) => s + i.quantidade, 0),
+  );
   if (fichaId && !id.safeParse(fichaId).success) return NAO_ENCONTRADA;
 
   try {
@@ -107,7 +115,10 @@ export async function salvarFicha(
     if (fichaId) {
       const atual = todas.find((f) => f.id === fichaId);
       if (!atual) return NAO_ENCONTRADA;
-      if (atual.tipo !== d.tipo) return { ok: false, mensagem: "O tipo da ficha não pode ser alterado." };
+      // Pode alternar entre massa e recheio; produto continua produto.
+      if (atual.tipo !== d.tipo && (atual.tipo === "produto" || d.tipo === "produto")) {
+        return { ok: false, mensagem: "Um produto não pode virar receita (nem o contrário)." };
+      }
       // Não pode usar uma ficha que (direta ou indiretamente) já usa esta: seria circular.
       const proibidas = dependentesDe(fichaId, todas);
       if (d.itens.some((i) => (i.tipo === "receita" || i.tipo === "produto") && proibidas.has(i.refId))) {
@@ -119,6 +130,7 @@ export async function salvarFicha(
 
     const novoId = fichaId ?? crypto.randomUUID();
     const campos = {
+      tipo: d.tipo,
       nome: d.nome,
       categoriaId: d.categoriaId,
       rendimento: d.rendimento,
@@ -145,7 +157,7 @@ export async function salvarFicha(
       garantirNegocioQuery(negocioId),
       fichaId
         ? db.update(fichas).set(campos).where(and(eq(fichas.id, fichaId), eq(fichas.negocioId, negocioId)))
-        : db.insert(fichas).values({ id: novoId, negocioId, tipo: d.tipo, ...campos }),
+        : db.insert(fichas).values({ id: novoId, negocioId, ...campos }),
       db.delete(fichaItens).where(eq(fichaItens.fichaId, novoId)),
       ...(linhas.length ? [db.insert(fichaItens).values(linhas)] : []),
     ]);

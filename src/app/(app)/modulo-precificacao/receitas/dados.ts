@@ -171,10 +171,14 @@ export async function carregarTudo(negocioId: string) {
 
 /** Tudo que o editor precisa. Sem `fichaId`, prepara uma ficha nova. */
 export async function montarEditor(negocioId: string, tipo: TipoFicha, fichaId?: string) {
-  const [{ contexto, fichas: lista, resultados }, categorias] = await Promise.all([
+  // Categorias de massa e recheio vêm juntas: a receita pode alternar entre os dois tipos.
+  const [{ contexto, fichas: lista, resultados }, massa, recheio, produto] = await Promise.all([
     carregarTudo(negocioId),
-    listarCategoriasFicha(negocioId, tipo),
+    listarCategoriasFicha(negocioId, "massa"),
+    listarCategoriasFicha(negocioId, "recheio"),
+    listarCategoriasFicha(negocioId, "produto"),
   ]);
+  const categoriasPorTipo: Record<TipoFicha, CategoriaFicha[]> = { massa, recheio, produto };
   const ficha = fichaId ? lista.find((f) => f.id === fichaId) : null;
   if (fichaId && !ficha) return null;
 
@@ -201,7 +205,7 @@ export async function montarEditor(negocioId: string, tipo: TipoFicha, fichaId?:
     equipamentos: [...contexto.equipamentos.values()],
     parametros: contexto.parametros,
     fichasRef,
-    categorias,
+    categoriasPorTipo,
     usadoEm,
   };
 }

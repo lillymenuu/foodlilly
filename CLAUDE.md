@@ -75,6 +75,7 @@ Pasta `src/app/(app)/modulo-precificacao/receitas/`. Rotas: central `/receitas`,
   - CMV = só insumos (inclusive os das fichas vinculadas)
   - produto (só produtos têm margem e preço; a ficha de receita mostra só custos, como na referência): fabricação = custo/porção ÷ (1 − alíquota do Custeio); preço = fabricação ÷ (1 − margem − imposto − taxa do crédito); revenda = fabricação ÷ (1 − margem revenda − imposto); marketplace = preço ÷ (1 − taxa do app)
 - Vínculos circulares são bloqueados (`dependentesDe`) no editor e no servidor.
+- Receita (massa/recheio): seletor Massa | Recheio na ficha (troca zera a categoria; produto não troca de tipo); categoria e peso total obrigatórios; **tempo de preparo é calculado** = minutos de mão de obra + equipamentos (gravado em `tempo_preparo_min`).
 - Pendente: foto, PDF da ficha, compartilhar, "meta de vendas".
 
 ## Armadilhas já resolvidas (não repetir)
