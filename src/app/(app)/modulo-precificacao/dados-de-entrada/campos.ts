@@ -10,9 +10,9 @@ import {
   Smartphone,
   Weight,
   Zap,
-  type LucideIcon,
 } from "lucide-react";
 
+import { valoresPadraoDe, type Campo as CampoBase, type Grupo as GrupoBase, type ValoresDe } from "@/lib/campos";
 import type { dadosEntrada } from "@/db/schema";
 
 /** Chaves dos campos editáveis (colunas da tabela dados_entrada). */
@@ -21,25 +21,8 @@ export type ChaveCampo = keyof Omit<
   "negocioId" | "atualizadoEm"
 >;
 
-export type Campo = {
-  chave: ChaveCampo;
-  rotulo: string;
-  dica: string;
-  icone: LucideIcon;
-  prefixo?: string;
-  sufixo?: string;
-  /** Valor sugerido quando o negócio ainda não salvou nada. */
-  padrao: number;
-  min: number;
-  max: number;
-  inteiro?: boolean;
-};
-
-export type Grupo = {
-  titulo: string;
-  icone: LucideIcon;
-  campos: Campo[];
-};
+export type Campo = CampoBase<ChaveCampo>;
+export type Grupo = GrupoBase<ChaveCampo>;
 
 export const grupos: Grupo[] = [
   {
@@ -62,6 +45,7 @@ export const grupos: Grupo[] = [
         dica: "Preço que você paga no botijão de gás.",
         icone: Flame,
         prefixo: "R$",
+        casas: 2,
         padrao: 120,
         min: 0,
         max: 5000,
@@ -164,8 +148,6 @@ export const grupos: Grupo[] = [
 
 export const campos = grupos.flatMap((g) => g.campos);
 
-export type Valores = Record<ChaveCampo, number | null>;
+export type Valores = ValoresDe<ChaveCampo>;
 
-export const valoresPadrao = Object.fromEntries(
-  campos.map((c) => [c.chave, c.padrao]),
-) as Valores;
+export const valoresPadrao = valoresPadraoDe(campos);

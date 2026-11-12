@@ -48,12 +48,18 @@ Paleta definida em `src/app/globals.css` (tokens do tema; usar as classes, nunca
 
 Referência: `src/app/(app)/modulo-precificacao/dados-de-entrada/`.
 
+Peças compartilhadas (usar em toda tela nova desse tipo):
+- `src/components/formulario/index.tsx`: `BannerFormulario` (título + progresso + Salvar), `CardGrupo` (grupo recolhível com progresso), `CampoNumero`, `InputUnidade`, `Dica`, `Aviso`, `BarraSalvarCelular`, `ModalSalvo`.
+- `src/components/formulario/use-campos-numericos.ts`: estado dos campos (texto, erros, valores, formatação ao sair do campo).
+- `src/lib/campos.ts` (tipo `Campo`, `campoMoeda`), `src/lib/numero-br.ts` (vírgula, R$, %), `src/lib/validacao.ts` (`esquemaNumeros` zod, `errosPorCampo`).
+
+Em cada tela:
 - `campos.ts`: definição dos campos (rótulo, dica, unidade, padrão, limites). Tela, validação e banco leem daqui.
 - `page.tsx` (Server Component): `<Suspense>` + componente async que chama `await connection()` e lê o banco (exigência do Cache Components).
 - `actions.ts` (`"use server"`): valida com **zod**, obtém o negócio com `obterNegocioAtualId()` (nunca confiar em id vindo do navegador), grava com `db.batch([...])` e chama `refresh()`.
 - Formulário (Client Component): números em pt-BR (vírgula), erro por campo, botão Salvar desabilitado sem alterações, barra fixa no rodapé no celular, modal de sucesso.
 - **Negócio atual:** `src/lib/negocio-atual.ts` devolve um negócio de demonstração fixo até a autenticação existir. Ao criar o login, só essa função muda.
-- **Tabelas:** `negocios` (o cliente) e `dados_entrada` (1 linha por negócio). Toda tabela de dados do cliente tem `negocio_id`.
+- **Tabelas:** `negocios` (o cliente), `dados_entrada` e `custeio` (1 linha por negócio), `custos_extras` (lista, substituída inteira a cada salvamento). Toda tabela de dados do cliente tem `negocio_id`.
 - O banco do Neon é o **mesmo** em local e produção: dados criados em testes devem ser apagados depois.
 
 - Área do SuperAdmin: a criar (ex.: `src/app/(admin)/admin/`)

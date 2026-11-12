@@ -1,7 +1,7 @@
 // Tabelas do banco (Drizzle).
 // Depois de alterar este arquivo: `npm run db:generate` e `npm run db:migrate`.
 
-import { integer, numeric, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { index, integer, numeric, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 /** Negócio do cliente (lanchonete, confeitaria...). Toda informação pertence a um negócio. */
 export const negocios = pgTable("negocios", {
@@ -37,3 +37,55 @@ export const dadosEntrada = pgTable("dados_entrada", {
 
   atualizadoEm: timestamp("atualizado_em", { withTimezone: true }).notNull().defaultNow(),
 });
+
+const moeda = (nome: string) => numeric(nome, { precision: 12, scale: 2, mode: "number" });
+
+/**
+ * Precificar > Custeio: receita e custos fixos mensais. Um registro por negócio.
+ * Campos nulos = ainda não preenchidos.
+ */
+export const custeio = pgTable("custeio", {
+  negocioId: uuid("negocio_id")
+    .primaryKey()
+    .references(() => negocios.id, { onDelete: "cascade" }),
+
+  receitaBruta: moeda("receita_bruta"),
+
+  // Energia e infraestrutura
+  aluguel: moeda("aluguel"),
+  energia: moeda("energia"),
+  agua: moeda("agua"),
+  gas: moeda("gas"),
+  internet: moeda("internet"),
+  telefone: moeda("telefone"),
+
+  // Funcionários
+  salarios: moeda("salarios"),
+  proLabore: moeda("pro_labore"),
+
+  // Sistemas
+  sistemas: moeda("sistemas"),
+  mensalidadeIfood: moeda("mensalidade_ifood"),
+
+  // Serviços
+  marketing: moeda("marketing"),
+  contador: moeda("contador"),
+  motoboy: moeda("motoboy"),
+
+  atualizadoEm: timestamp("atualizado_em", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Custos fixos livres do Custeio ("Custos extras"). Vários por negócio. */
+export const custosExtras = pgTable(
+  "custos_extras",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    negocioId: uuid("negocio_id")
+      .notNull()
+      .references(() => negocios.id, { onDelete: "cascade" }),
+    descricao: text().notNull(),
+    valor: moeda("valor").notNull(),
+    ordem: integer().notNull().default(0),
+  },
+  (t) => [index("custos_extras_negocio_idx").on(t.negocioId)],
+);
