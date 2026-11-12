@@ -41,6 +41,19 @@ export function mascaraMoeda(texto: string) {
   return paraTexto(centavos / 100, 2);
 }
 
+/**
+ * Máscara de número com ponto de milhar ao digitar ("2700" -> "2.700").
+ * Aceita uma vírgula decimal ("2.700,5"); ignora letras e outros símbolos.
+ */
+export function mascaraMilhar(texto: string, casasDecimais = 2) {
+  const limpo = texto.replace(/[^\d,]/g, "");
+  const [inteiro, ...resto] = limpo.split(",");
+  const digitos = inteiro.replace(/^0+(?=\d)/, "").slice(0, 9);
+  const comMilhar = digitos.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  if (!resto.length) return comMilhar;
+  return `${comMilhar || "0"},${resto.join("").slice(0, casasDecimais)}`;
+}
+
 export const formatarMoeda = (valor: number) =>
   valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 

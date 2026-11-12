@@ -10,7 +10,7 @@ import { BannerCadastro, CabecalhoLista, VazioCadastro } from "@/components/cada
 import { SelectNativo } from "@/components/cadastro/select-nativo";
 import { notificar } from "@/components/notificacoes";
 import { Button } from "@/components/ui/button";
-import { formatarMoeda, formatarPercentual, paraTexto } from "@/lib/numero-br";
+import { formatarMoeda, formatarPercentual } from "@/lib/numero-br";
 import { compararNome, normalizar, plural } from "@/lib/texto";
 
 import { alternarFavorito, duplicarFicha } from "./actions";
@@ -300,7 +300,7 @@ function CardFicha({
           { rotulo: "Margem", valor: item.margem != null ? formatarPercentual(item.margem / 100, 0) : "—" },
         ]
       : [
-          { rotulo: "Peso", valor: item.pesoTotalG ? `${paraTexto(item.pesoTotalG)} g` : "—" },
+          { rotulo: "Peso", valor: item.pesoTotalG ? `${item.pesoTotalG.toLocaleString("pt-BR")} g` : "—" },
           { rotulo: "Custo/kg", valor: item.custoKg != null ? formatarMoeda(item.custoKg) : "—" },
           { rotulo: "Custo/un.", valor: formatarMoeda(item.custoPorcao) },
         ];

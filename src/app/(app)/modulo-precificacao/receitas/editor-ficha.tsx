@@ -40,6 +40,7 @@ import {
   formatarMoeda,
   formatarMoedaPrecisa,
   formatarPercentual,
+  mascaraMilhar,
   paraNumero,
   paraTexto,
 } from "@/lib/numero-br";
@@ -152,7 +153,7 @@ function estadoInicial(tipo: TipoFicha, f: FichaBase | null): Estado {
     nome: f?.nome ?? "",
     categoriaId: f?.categoriaId ?? "",
     rendimento: texto(f?.rendimento ?? 1),
-    peso: texto(f?.pesoTotalG),
+    peso: mascaraMilhar(texto(f?.pesoTotalG)),
     tipo: f?.tipo ?? tipo,
     // Só produtos têm margem; sem valor salvo, começa com a margem padrão.
     margem: tipo === "produto" ? texto(f?.margem ?? MARGEM_PADRAO) : "",
@@ -280,7 +281,7 @@ export function EditorFicha(props: PropsEditor) {
           grupo: INFO_TIPO[f.tipo].titulo,
           unidade: "g",
           detalhe: f.pesoTotalG
-            ? `${paraTexto(f.pesoTotalG)} g · ${formatarMoeda(f.custoTotal)}`
+            ? `${f.pesoTotalG.toLocaleString("pt-BR")} g · ${formatarMoeda(f.custoTotal)}`
             : undefined,
           aviso: f.pesoTotalG
             ? undefined
@@ -431,7 +432,8 @@ export function EditorFicha(props: PropsEditor) {
       dica={
         tipo === "produto" ? "Peso do produto pronto." : "Peso final pronto."
       }
-      onAlterar={(v) => set("peso", v)}
+      // Máscara de milhar: "2700" vira "2.700".
+      onAlterar={(v) => set("peso", mascaraMilhar(v))}
     />
   );
   /** Sem nenhum item: os custos aparecem como "—", como na referência. */
@@ -728,7 +730,7 @@ export function EditorFicha(props: PropsEditor) {
                 rotulo="Peso/porção"
                 valor={
                   resultado.pesoPorcaoG != null
-                    ? `${paraTexto(Math.round(resultado.pesoPorcaoG))} g`
+                    ? `${Math.round(resultado.pesoPorcaoG).toLocaleString("pt-BR")} g`
                     : "—"
                 }
               />
@@ -1069,7 +1071,7 @@ export function EditorFicha(props: PropsEditor) {
                     {u.nome}
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    {u.pesoG ? `${paraTexto(u.pesoG)} g` : "Sem peso"}
+                    {u.pesoG ? `${u.pesoG.toLocaleString("pt-BR")} g` : "Sem peso"}
                   </span>
                   {u.preco != null && (
                     <span className="text-sm font-semibold text-success tabular-nums">
