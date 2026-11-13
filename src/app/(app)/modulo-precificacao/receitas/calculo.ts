@@ -7,9 +7,9 @@
  * - Equipamento elétrico: kW × horas × R$/kWh; a gás: kg/h × horas × (R$ botijão ÷ kg)
  * - Insumo: quantidade × custo real da unidade (já com a perda)
  * - Receita/produto vinculado: gramas usadas ÷ peso total da ficha × custo total dela
- * - CMV: só insumos (ingredientes + embalagens), inclusive os das fichas vinculadas
+ * - CMV: só ingredientes (sem embalagens), inclusive os das fichas vinculadas
  * - Produto:
- *   fabricação = custo/porção ÷ (1 − alíquota de custo fixo do Custeio)
+ *   fabricação = custo/porção × (1 + % de custo fixo do Custeio)
  *   preço = fabricação ÷ (1 − margem − imposto − taxa do cartão)
  *   revenda = fabricação ÷ (1 − margem de revenda − imposto)
  *   marketplace = preço ÷ (1 − taxa do app)
@@ -126,7 +126,8 @@ export function calcularFicha(
         nome = insumo.nome;
         detalhe = `${qtd(item.quantidade)} ${UNIDADE_CURTA[insumo.unidade] ?? insumo.unidade}`;
         custo = item.quantidade * insumo.custoUnitario;
-        cmvTotal += custo;
+        // CMV só com ingredientes (embalagem entra no custo, não no CMV), como na referência.
+        if (item.tipo === "ingrediente") cmvTotal += custo;
         valido = true;
       }
     } else if (item.tipo === "receita" || item.tipo === "produto") {
@@ -191,7 +192,8 @@ function calcularPreco(
 ): Preco {
   const margem = (ficha.margem ?? 0) / 100;
   const margemRevenda = (ficha.margemRevenda ?? p.margemRevendaPadrao) / 100;
-  const fabricacao = p.aliquotaFixa < 1 ? custoPorcao / (1 - p.aliquotaFixa) : custoPorcao;
+  // Custo fixo entra como acréscimo sobre o custo (5,40 × 1,432 = 7,73 na referência).
+  const fabricacao = custoPorcao * (1 + p.aliquotaFixa);
   const divisor = 1 - margem - p.imposto - p.taxaCredito;
   const valido = divisor > 0.0001;
   const preco = valido ? fabricacao / divisor : 0;
