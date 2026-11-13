@@ -15,11 +15,98 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
+// ---------------------------------------------------------------- Acesso (Better Auth)
+// Nomes dos campos (chaves JS) seguem o Better Auth; tabelas e colunas em português.
+
+export const usuarios = pgTable("usuarios", {
+  id: text().primaryKey(),
+  name: text("nome").notNull(),
+  email: text().notNull().unique(),
+  emailVerified: boolean("email_verificado").notNull().default(false),
+  image: text("imagem"),
+  createdAt: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("atualizado_em", { withTimezone: true }).notNull().defaultNow(),
+  // Campos do cadastro
+  telefone: text(),
+  cpf: text(),
+  pais: text().notNull().default("BR"),
+  codigoIndicacao: text("codigo_indicacao"),
+  /** Quando aceitou os Termos de Uso e a Política de Privacidade. */
+  termosAceitosEm: timestamp("termos_aceitos_em", { withTimezone: true }),
+});
+
+export const sessoes = pgTable(
+  "sessoes",
+  {
+    id: text().primaryKey(),
+    expiresAt: timestamp("expira_em", { withTimezone: true }).notNull(),
+    token: text().notNull().unique(),
+    createdAt: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("atualizado_em", { withTimezone: true }).notNull().defaultNow(),
+    ipAddress: text("ip"),
+    userAgent: text("navegador"),
+    userId: text("usuario_id")
+      .notNull()
+      .references(() => usuarios.id, { onDelete: "cascade" }),
+  },
+  (t) => [index("sessoes_usuario_idx").on(t.userId)],
+);
+
+/** Formas de entrar de cada usuário (senha ou Google). */
+export const contasAcesso = pgTable(
+  "contas_acesso",
+  {
+    id: text().primaryKey(),
+    accountId: text("conta_id").notNull(),
+    providerId: text("provedor").notNull(),
+    userId: text("usuario_id")
+      .notNull()
+      .references(() => usuarios.id, { onDelete: "cascade" }),
+    accessToken: text("access_token"),
+    refreshToken: text("refresh_token"),
+    idToken: text("id_token"),
+    accessTokenExpiresAt: timestamp("access_token_expira_em", { withTimezone: true }),
+    refreshTokenExpiresAt: timestamp("refresh_token_expira_em", { withTimezone: true }),
+    scope: text("escopo"),
+    password: text("senha_hash"),
+    createdAt: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("atualizado_em", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("contas_acesso_usuario_idx").on(t.userId)],
+);
+
+export const verificacoes = pgTable(
+  "verificacoes",
+  {
+    id: text().primaryKey(),
+    identifier: text("identificador").notNull(),
+    value: text("valor").notNull(),
+    expiresAt: timestamp("expira_em", { withTimezone: true }).notNull(),
+    createdAt: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("atualizado_em", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("verificacoes_identificador_idx").on(t.identifier)],
+);
+
+export const PLANOS = ["basico", "completo"] as const;
+
 /** Negócio do cliente (lanchonete, confeitaria...). Toda informação pertence a um negócio. */
 export const negocios = pgTable("negocios", {
   id: uuid().primaryKey().defaultRandom(),
   nome: text().notNull(),
   criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+  /** Dono do negócio (um negócio por usuário). */
+  usuarioId: text("usuario_id")
+    .unique()
+    .references(() => usuarios.id, { onDelete: "set null" }),
+  /** Plano escolhido (ou de interesse, durante o teste). */
+  plano: text({ enum: PLANOS }).notNull().default("basico"),
+  /** Fim do teste grátis de 7 dias. */
+  testeAte: timestamp("teste_ate", { withTimezone: true }),
+  /** Acesso pago até esta data (renovado pelo Pix). */
+  pagoAte: timestamp("pago_ate", { withTimezone: true }),
+  /** Acesso liberado sem cobrança (ex.: o dono do sistema). */
+  isento: boolean().notNull().default(false),
   /** Quando os equipamentos padrão foram criados (null = ainda não). Evita recriá-los se o cliente excluir. */
   equipamentosPadraoEm: timestamp("equipamentos_padrao_em", { withTimezone: true }),
   /** Idem para os funcionários padrão. */

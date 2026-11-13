@@ -50,6 +50,13 @@
       "when": 1794533573220,
       "tag": "0006_strange_killmonger",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794538070991,
+      "tag": "0007_slimy_lorna_dane",
+      "breakpoints": true
     }
   ]
 }

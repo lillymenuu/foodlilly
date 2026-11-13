@@ -25,13 +25,21 @@ export function AppBreadcrumb() {
   if (!rota && pathname === "/assinatura") {
     trilha.push({ titulo: "Assinatura", href: "/assinatura" });
   }
+  if (!rota && pathname === "/perfil") {
+    trilha.push({ titulo: "Meu perfil", href: "/perfil" });
+  }
 
   return (
     <Breadcrumb className="min-w-0">
       <BreadcrumbList className="flex-nowrap">
-        <BreadcrumbItem className={trilha.length ? "hidden sm:inline-flex" : ""}>
+        <BreadcrumbItem
+          className={trilha.length ? "hidden sm:inline-flex" : ""}
+        >
           {trilha.length ? (
-            <BreadcrumbLink render={<Link href="/dashboard" />} className="flex items-center gap-1.5">
+            <BreadcrumbLink
+              render={<Link href="/dashboard" />}
+              className="flex items-center gap-1.5"
+            >
               <LayoutDashboard className="size-3.5" />
               Dashboard
             </BreadcrumbLink>
@@ -52,9 +60,13 @@ export function AppBreadcrumb() {
               <BreadcrumbSeparator className="hidden sm:inline-flex" />
               <BreadcrumbItem className={`min-w-0 ${soDesktop}`}>
                 {ultimo ? (
-                  <BreadcrumbPage className="truncate font-medium">{item.titulo}</BreadcrumbPage>
+                  <BreadcrumbPage className="truncate font-medium">
+                    {item.titulo}
+                  </BreadcrumbPage>
                 ) : (
-                  <BreadcrumbLink render={<Link href={item.href} />}>{item.titulo}</BreadcrumbLink>
+                  <BreadcrumbLink render={<Link href={item.href} />}>
+                    {item.titulo}
+                  </BreadcrumbLink>
                 )}
               </BreadcrumbItem>
             </Fragment>

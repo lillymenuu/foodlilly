@@ -34,7 +34,8 @@ Paleta definida em `src/app/globals.css` (tokens do tema; usar as classes, nunca
 
 ## Estrutura das telas
 
-- `src/app/page.tsx`: página pública (por enquanto, "em construção" com link para a prévia)
+- `src/app/page.tsx`: página inicial pública (landing: topo, lucro de cabeça × de verdade, 3 passos com simulador, recursos, teste de 7 dias, planos, dúvidas). Peças em `src/components/landing/`. Sem números de clientes ou depoimentos inventados.
+- Páginas públicas: `/`, `/entrar`, `/cadastro`, `/termos`, `/privacidade` (lista em `src/proxy.ts`); o resto exige login.
 - `src/app/(app)/`: área logada do cliente, com `layout.tsx` (menu lateral + cabeçalho com breadcrumb)
 - **Navegação: fonte única em `src/config/navegacao.ts`.** Menu lateral (`app-sidebar.tsx`), breadcrumb (`app-breadcrumb.tsx`) e páginas centrais dos módulos (`modulo-hub.tsx`) leem dela. Tela nova = item no config + `page.tsx` na rota.
   - Módulos: Dashboard, Capacitação, Precificar, Estoque, Financeiro, Produção (Beta), Checklists, Modo funcionário, Novidades. Assinatura fica no rodapé do menu.
@@ -58,7 +59,7 @@ Em cada tela:
 - `page.tsx` (Server Component): `<Suspense>` + componente async que chama `await connection()` e lê o banco (exigência do Cache Components).
 - `actions.ts` (`"use server"`): valida com **zod**, obtém o negócio com `obterNegocioAtualId()` (nunca confiar em id vindo do navegador), grava com `db.batch([...])` e chama `refresh()`.
 - Formulário (Client Component): números em pt-BR (vírgula), erro por campo, botão Salvar desabilitado sem alterações, barra fixa no rodapé no celular, modal de sucesso.
-- **Negócio atual:** `src/lib/negocio-atual.ts` devolve um negócio de demonstração fixo até a autenticação existir. Ao criar o login, só essa função muda.
+- **Negócio atual:** `obterNegocioAtualId()` em `src/lib/negocio-atual.ts` lê a sessão e devolve o negócio do usuário (com o acesso vencido, manda para `/assinatura`). Ver a seção Acesso.
 - **Tabelas:** `negocios` (o cliente), `dados_entrada` e `custeio` (1 linha por negócio), `custos_extras` (lista, substituída inteira a cada salvamento), `equipamentos`, `funcionarios`, `insumos`, `categorias_insumo`, `fichas`, `ficha_itens` e `categorias_ficha` (cadastros; categoria com `sistema = true` não pode ser editada/excluída; excluir categoria com insumos exige mover para outra). Toda tabela de dados do cliente tem `negocio_id`.
 - **Telas de cadastro (lista + criar/editar/excluir):** referências `modulo-precificacao/equipamentos/`, `/funcionarios/` e `/insumos/` (abas, categorias, modal dentro de modal, código de barras). Peças em `src/components/cadastro/index.tsx` (`BannerCadastro` com busca/ordenar/novo, `CardCadastro`, `VazioCadastro`, `ModalFormulario`, `CampoModal`, `ModalExcluir`); cabeçalho colorido dos modais em `src/components/modal-cabecalho.tsx` (novo = laranja, editar = marinho, excluir = vermelho); itens padrão com `garantirItensPadrao` (`src/lib/itens-padrao.ts`); busca/iniciais em `src/lib/texto.ts`. Actions sempre filtram por `negocio_id` ao editar/excluir. Itens padrão são criados na primeira visita e a data fica no negócio (`equipamentos_padrao_em`), para não recriar o que o cliente excluiu.
 - **Notificações:** `notificar.sucesso(titulo, descricao)` (também `.erro`, `.info`) de `src/components/notificacoes.tsx` mostra um aviso flutuante no topo, centralizado, que some em 4 s (Sonner, estilizado com a paleta). Usar após criar/editar/excluir; não usar faixas fixas na página para confirmar ações.
@@ -93,6 +94,18 @@ Pasta `src/app/(app)/modulo-precificacao/receitas/`. Rotas: central `/receitas`,
 - **Margem meta**: coluna `negocios.margem_meta` (padrão 30), editada pelo lápis do indicador (`salvarMargemMeta`).
 - Gráficos: shadcn `chart` (Recharts 3). Cores por categoria em `--serie-1..5` (`globals.css`, utilitários `bg-serie-N`), ordem **validada para daltonismo** com o validador de paletas: não reordenar nem trocar sem validar. Legenda sempre visível; animações respeitam `prefers-reduced-motion`.
 
+## Acesso (login, cadastro, teste grátis)
+
+- **Better Auth** (`src/lib/auth.ts`, cliente em `src/lib/auth-client.ts`, rota `/api/auth/[...all]`), com Drizzle (`transaction: false`, o Neon HTTP não tem transações). Tabelas em português: `usuarios`, `sessoes`, `contas_acesso`, `verificacoes` (chaves JS no padrão do Better Auth). Segredo `BETTER_AUTH_SECRET` no `.env.local` e na Vercel.
+- **Cadastro** (`/cadastro`): país (bandeiras SVG, `country-flag-icons`), nome, telefone com DDI, e-mail + confirmação, CPF (só Brasil, dígitos verificados), senha + confirmação, código de indicação (só guardado), aceite dos Termos e da Privacidade. Regras em `src/lib/cadastro.ts`, validadas também no servidor (gancho `/sign-up/email`). `/update-user` não altera telefone/CPF/país: isso é feito pelo Perfil.
+- **Usuário novo** ganha um negócio com teste de 7 dias (`databaseHooks.user.create.after`). Negócio: `usuario_id` (único), `plano`, `teste_ate`, `pago_ate`, `isento`. Situação em `acessoDo()`: isento, pago, teste ou vencido.
+- **Vencido:** as páginas e ações que usam `obterNegocioAtualId()` redirecionam para `/assinatura`; `BloqueioVencido` faz o mesmo no navegador. `/assinatura` e `/perfil` continuam abertos.
+- **Proxy** (`src/proxy.ts`): checagem rápida pelo cookie; a verificação de verdade é no servidor. **`obterSessao()` chama `await connection()`** antes de ler a sessão (senão a leitura roda no pré-carregamento parcial e volta vazia).
+- **Perfil** (`/perfil`): dados pessoais, nome do negócio, senha. Troca de senha pelo **cliente** (`authClient.changePassword`), porque pela Server Action o cookie da sessão renovada não chegava ao navegador; criar senha (conta só Google) é Server Action.
+- **Google:** botões só aparecem com `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` configurados. Redirecionamento autorizado: `<site>/api/auth/callback/google`.
+- **Planos:** fonte única em `src/config/planos.ts` (Gestão Básico R$ 32,32, Gestão Completa R$ 49,99; itens provisórios). Pix ainda não implementado (Assinatura mostra "em breve").
+- O negócio de demonstração (`00000000-0000-4000-8000-000000000001`, dados do dono) está com `isento = true` e deve ser ligado à conta do dono depois do primeiro cadastro dele.
+
 ## Armadilhas já resolvidas (não repetir)
 
 - `<Button render={<Link />}>`: o `Button` já passa `nativeButton={false}` sozinho quando há `render`; sem isso o Base UI avisa e dá erro de hidratação.
@@ -101,6 +114,7 @@ Pasta `src/app/(app)/modulo-precificacao/receitas/`. Rotas: central `/receitas`,
 - **Estado preservado entre navegações:** com Cache Components o Next esconde a página (`<Activity>`) em vez de desmontar, e o `useState` continua. Formulários de "novo cadastro" devem se limpar num `useLayoutEffect` de limpeza (ver `editor-ficha.tsx`); modais também devem fechar ao esconder. Guia: `node_modules/next/dist/docs/01-app/02-guides/preserving-ui-state.md`.
 
 - Área do SuperAdmin: a criar (ex.: `src/app/(admin)/admin/`)
+- Funções de um arquivo `"use client"` não podem ser chamadas no servidor (ex.: `destinoSeguro` fica em `src/lib/destino.ts`).
 - **Banco**: PostgreSQL 18 no **Neon**, projeto `dblillyfood` (banco `neondb`), criado pela integração Vercel ↔ Neon e conectado ao projeto `foodlilly` na Vercel. Acesso pela variável `DATABASE_URL` (connection string *pooled*). A integração também cria `DATABASE_URL_UNPOOLED` (conexão direta, útil para migrations).
 - **ORM**: **Drizzle** com o driver `@neondatabase/serverless` (modo HTTP, `drizzle-orm/neon-http`)
   - Conexão em `src/db/index.ts` (importa `server-only`, nunca usar em Client Components); tabelas em `src/db/schema.ts`

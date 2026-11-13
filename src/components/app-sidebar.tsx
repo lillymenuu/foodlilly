@@ -2,14 +2,18 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { ChefHat, ChevronRight, CreditCard, Lock, LogOut } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  ChefHat,
+  ChevronRight,
+  CreditCard,
+  LoaderCircle,
+  Lock,
+  LogOut,
+} from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  Collapsible,
-  CollapsibleContent,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import {
   Sidebar,
   SidebarContent,
@@ -26,19 +30,30 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { encontrarRota, navegacao, type Modulo } from "@/config/navegacao";
+import { authClient } from "@/lib/auth-client";
+import { iniciais } from "@/lib/texto";
+
+/** Dados do usuário logado mostrados no rodapé do menu. */
+export type UsuarioMenu = { nome: string; email: string; negocio: string };
 
 const ativoNoMenu = "data-active:[&>svg:first-child]:text-sidebar-primary";
 
 /** Menu com o item da página atual marcado (precisa de <Suspense> no layout). */
-export function AppSidebarAtual() {
-  return <AppSidebar pathname={usePathname()} />;
+export function AppSidebarAtual({ usuario }: { usuario?: UsuarioMenu }) {
+  return <AppSidebar pathname={usePathname()} usuario={usuario} />;
 }
 
 /**
  * Sem `pathname` (versão provisória do <Suspense>, em rotas dinâmicas como
  * /ficha/[id]), mostra o menu sem item marcado.
  */
-export function AppSidebar({ pathname = "" }: { pathname?: string }) {
+export function AppSidebar({
+  pathname = "",
+  usuario,
+}: {
+  pathname?: string;
+  usuario?: UsuarioMenu;
+}) {
   const { setOpenMobile } = useSidebar();
   const rota = encontrarRota(pathname);
 
@@ -80,7 +95,9 @@ export function AppSidebar({ pathname = "" }: { pathname?: string }) {
                   ativo={rota?.modulo.href === modulo.href}
                   paginaAtiva={rota?.pagina?.href}
                   aberto={aberto === modulo.href}
-                  onAbrir={(abrir) => setAberto(abrir ? modulo.href : undefined)}
+                  onAbrir={(abrir) =>
+                    setAberto(abrir ? modulo.href : undefined)
+                  }
                   onNavegar={fecharNoCelular}
                 />
               ) : (
@@ -88,7 +105,9 @@ export function AppSidebar({ pathname = "" }: { pathname?: string }) {
                   <SidebarMenuButton
                     isActive={rota?.modulo.href === modulo.href}
                     tooltip={modulo.titulo}
-                    render={<Link href={modulo.href} onClick={fecharNoCelular} />}
+                    render={
+                      <Link href={modulo.href} onClick={fecharNoCelular} />
+                    }
                     className={`h-10 ${ativoNoMenu}`}
                   >
                     <modulo.icone />
@@ -114,32 +133,32 @@ export function AppSidebar({ pathname = "" }: { pathname?: string }) {
               <span>Assinatura</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
-          {/* Usuário fixo até a autenticação existir. */}
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" className="pointer-events-none">
-              <Avatar className="size-8">
-                <AvatarFallback className="bg-sidebar-primary text-xs font-semibold text-sidebar-primary-foreground">
-                  CA
-                </AvatarFallback>
-              </Avatar>
-              <span className="grid flex-1 leading-tight">
-                <span className="truncate text-sm font-medium text-white">
-                  Cantina da Ana
+          {usuario && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                size="lg"
+                isActive={pathname === "/perfil"}
+                tooltip="Meu perfil"
+                render={<Link href="/perfil" onClick={fecharNoCelular} />}
+                className="pr-10"
+              >
+                <Avatar className="size-8">
+                  <AvatarFallback className="bg-sidebar-primary text-xs font-semibold text-sidebar-primary-foreground">
+                    {iniciais(usuario.nome)}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="grid flex-1 leading-tight">
+                  <span className="truncate text-sm font-medium text-white">
+                    {usuario.nome}
+                  </span>
+                  <span className="truncate text-xs text-sidebar-foreground/70">
+                    {usuario.negocio}
+                  </span>
                 </span>
-                <span className="truncate text-xs text-sidebar-foreground/70">
-                  ana@exemplo.com
-                </span>
-              </span>
-            </SidebarMenuButton>
-            <SidebarMenuAction
-              render={<Link href="/" />}
-              className="top-3! size-6"
-              aria-label="Sair"
-              title="Sair"
-            >
-              <LogOut />
-            </SidebarMenuAction>
-          </SidebarMenuItem>
+              </SidebarMenuButton>
+              <BotaoSair />
+            </SidebarMenuItem>
+          )}
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
@@ -225,5 +244,26 @@ function ModuloComSubmenu({
         </CollapsibleContent>
       </Collapsible>
     </SidebarMenuItem>
+  );
+}
+
+function BotaoSair() {
+  const router = useRouter();
+  const [saindo, setSaindo] = useState(false);
+  return (
+    <SidebarMenuAction
+      className="top-3! size-6"
+      aria-label="Sair"
+      title="Sair"
+      disabled={saindo}
+      onClick={async () => {
+        setSaindo(true);
+        await authClient.signOut();
+        router.replace("/entrar");
+        router.refresh();
+      }}
+    >
+      {saindo ? <LoaderCircle className="animate-spin" /> : <LogOut />}
+    </SidebarMenuAction>
   );
 }

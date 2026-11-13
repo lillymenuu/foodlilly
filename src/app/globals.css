@@ -140,6 +140,16 @@
     stroke-dashoffset: 0;
   }
 }
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes flutuar {
+  50% {
+    transform: translateY(-8px);
+  }
+}
 @keyframes crescer-x {
   from {
     transform: scaleX(0);

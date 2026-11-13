@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
@@ -25,6 +26,14 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { planoPorChave } from "@/config/planos";
+import {
+  acessoDo,
+  obterNegocioAtual,
+  obterUsuarioAtual,
+} from "@/lib/negocio-atual";
+
+import { AvisoBoasVindas } from "./aviso-boas-vindas";
 
 export const metadata: Metadata = { title: "Dashboard · foodlilly" };
 
@@ -105,41 +114,48 @@ const servicos: Servico[] = [
   },
 ];
 
-// Dados fixos até a autenticação existir.
-const usuario = { nome: "Ana", plano: "Plano mensal", validoAte: "23/11/2026" };
-
 export default function DashboardPage() {
   return (
     <>
       <section className="relative overflow-hidden rounded-2xl bg-primary px-6 py-7 text-primary-foreground sm:px-8 sm:py-8">
         {/* Detalhes decorativos */}
-        <div aria-hidden className="pointer-events-none absolute -top-24 -right-16 size-72 rounded-full bg-highlight/15" />
-        <div aria-hidden className="pointer-events-none absolute -right-4 -bottom-28 size-56 rounded-full border-[28px] border-white/5" />
-        <ChefHat aria-hidden className="pointer-events-none absolute right-10 bottom-6 hidden size-28 -rotate-12 text-white/10 md:block" />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -top-24 -right-16 size-72 rounded-full bg-highlight/15"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-4 -bottom-28 size-56 rounded-full border-[28px] border-white/5"
+        />
+        <ChefHat
+          aria-hidden
+          className="pointer-events-none absolute right-10 bottom-6 hidden size-28 -rotate-12 text-white/10 md:block"
+        />
 
         <div className="relative flex flex-col gap-4 md:max-w-xl">
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            Olá, <span className="text-highlight">{usuario.nome}</span>{" "}
-            <span aria-hidden>👋</span>
-          </h1>
+          <Suspense
+            fallback={
+              <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                Olá! <span aria-hidden>👋</span>
+              </h1>
+            }
+          >
+            <Saudacao />
+          </Suspense>
           <p className="text-sm leading-relaxed text-primary-foreground/80 sm:text-base">
             Explore os módulos e aproveite ao máximo o foodlilly. Ficou com
             dúvida? Veja as aulas em{" "}
-            <Link href="/capacitacao" className="font-medium text-white underline underline-offset-4">
+            <Link
+              href="/capacitacao"
+              className="font-medium text-white underline underline-offset-4"
+            >
               Capacitação
             </Link>
             .
           </p>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-medium ring-1 ring-white/15">
-              <Crown className="size-3.5 text-highlight" />
-              {usuario.plano}
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-medium ring-1 ring-white/15">
-              <span className="size-1.5 rounded-full bg-emerald-400" />
-              Ativo até {usuario.validoAte}
-            </span>
-          </div>
+          <Suspense fallback={<span className="h-6" />}>
+            <SelosPlano />
+          </Suspense>
         </div>
 
         <Button
@@ -192,7 +208,9 @@ function CardServico({ servico }: { servico: Servico }) {
             <span className="block font-semibold">{linha1}</span>
           )}
         </h3>
-        <p className="mt-1.5 text-sm text-muted-foreground">{servico.descricao}</p>
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          {servico.descricao}
+        </p>
       </div>
 
       {/* Ilustração: ícone principal + detalhe em laranja */}
@@ -205,5 +223,51 @@ function CardServico({ servico }: { servico: Servico }) {
         </span>
       </div>
     </Link>
+  );
+}
+
+async function Saudacao() {
+  const usuario = await obterUsuarioAtual();
+  const primeiro = usuario.name.trim().split(/\s+/)[0];
+  return (
+    <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+      Olá, <span className="text-highlight">{primeiro}</span>{" "}
+      <span aria-hidden>👋</span>
+    </h1>
+  );
+}
+
+async function SelosPlano() {
+  const negocio = await obterNegocioAtual();
+  const a = acessoDo(negocio);
+  const ate = a.ate?.toLocaleDateString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+  });
+  const plano =
+    a.situacao === "teste"
+      ? "Teste grátis"
+      : a.situacao === "isento"
+        ? "Acesso liberado"
+        : planoPorChave(negocio.plano).nome;
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-medium ring-1 ring-white/15">
+        <Crown className="size-3.5 text-highlight" />
+        {plano}
+      </span>
+      {ate && (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-medium ring-1 ring-white/15">
+          <span
+            className={
+              a.situacao === "expirado"
+                ? "size-1.5 rounded-full bg-red-400"
+                : "size-1.5 rounded-full bg-emerald-400"
+            }
+          />
+          {a.situacao === "expirado" ? "Venceu em" : "Ativo até"} {ate}
+        </span>
+      )}
+      <AvisoBoasVindas />
+    </div>
   );
 }
