@@ -14,7 +14,21 @@ export type ProdutoRelatorio = {
   /** Margem definida na ficha (%). */
   margem: number;
   composicao: Record<ChaveComposicao, number>;
+  // Detalhes usados na tabela do PDF
+  pesoTotalG: number | null;
+  rendimento: number;
+  revenda: number;
+  /** Preço em cada app de entrega (mesma ordem de `AppEntrega`). */
+  marketplace: number[];
+  precoKg: number | null;
+  /** Margem em reais (preço × margem), como na ficha técnica. */
+  margemValor: number;
+  /** Quantas receitas/produtos a ficha usa. */
+  receitas: number;
 };
+
+/** App de entrega com a taxa (Dados de entrada), para as colunas do PDF. */
+export type AppEntrega = { nome: string; taxa: number };
 
 export type ChaveComposicao =
   "ingredientes" | "embalagens" | "receitas" | "maoObra" | "equipamentos";

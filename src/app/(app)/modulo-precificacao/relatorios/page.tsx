@@ -10,7 +10,7 @@ import { obterNegocioAtualId } from "@/lib/negocio-atual";
 
 import { carregarTudo, listarCategoriasFicha } from "../receitas/dados";
 import { TelaRelatorio } from "./tela-relatorio";
-import type { ProdutoRelatorio } from "./tipos";
+import type { AppEntrega, ProdutoRelatorio } from "./tipos";
 
 export const metadata: Metadata = { title: "Relatórios · foodlilly" };
 
@@ -25,16 +25,18 @@ export default function Page() {
 async function Conteudo() {
   await connection(); // dados do negócio: sempre lidos na hora
   const negocioId = await obterNegocioAtualId();
-  const [{ fichas, resultados }, categorias, [negocio]] = await Promise.all([
-    carregarTudo(negocioId),
-    listarCategoriasFicha(negocioId, "produto"),
-    db
-      .select({ margemMeta: negocios.margemMeta })
-      .from(negocios)
-      .where(eq(negocios.id, negocioId))
-      .limit(1),
-  ]);
+  const [{ fichas, resultados, contexto }, categorias, [negocio]] =
+    await Promise.all([
+      carregarTudo(negocioId),
+      listarCategoriasFicha(negocioId, "produto"),
+      db
+        .select({ margemMeta: negocios.margemMeta, nome: negocios.nome })
+        .from(negocios)
+        .where(eq(negocios.id, negocioId))
+        .limit(1),
+    ]);
   const nomeCategoria = new Map(categorias.map((c) => [c.id, c.nome]));
+  const apps: AppEntrega[] = contexto.parametros.apps;
 
   const produtos: ProdutoRelatorio[] = [];
   let semPreco = 0;
@@ -62,6 +64,18 @@ async function Conteudo() {
         maoObra: porcao(r.custos.mao_obra),
         equipamentos: porcao(r.custos.equipamento),
       },
+      pesoTotalG: f.pesoTotalG,
+      rendimento: f.rendimento,
+      revenda: p.revenda,
+      // Mesmo cálculo da ficha (preço ÷ (1 − taxa)), um valor por app, na ordem de `apps`.
+      marketplace: apps.map((a) =>
+        a.taxa > 0 && a.taxa < 1 ? p.preco / (1 - a.taxa) : p.preco,
+      ),
+      precoKg: p.precoKg,
+      margemValor: p.lucro,
+      receitas: f.itens.filter(
+        (i) => i.tipo === "receita" || i.tipo === "produto",
+      ).length,
     });
   }
 
@@ -70,6 +84,8 @@ async function Conteudo() {
       produtos={produtos}
       semPreco={semPreco}
       margemMeta={negocio?.margemMeta ?? 30}
+      negocio={negocio?.nome ?? ""}
+      apps={apps}
     />
   );
 }

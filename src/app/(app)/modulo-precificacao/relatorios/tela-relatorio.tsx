@@ -19,6 +19,7 @@ import {
   Download,
   FileText,
   Info,
+  LoaderCircle,
   Package,
   Pencil,
   Plus,
@@ -56,6 +57,7 @@ import {
 } from "./graficos";
 import {
   COMPOSICAO,
+  type AppEntrega,
   type ChaveComposicao,
   type ProdutoRelatorio,
 } from "./tipos";
@@ -103,10 +105,14 @@ export function TelaRelatorio({
   produtos,
   semPreco,
   margemMeta,
+  negocio,
+  apps,
 }: {
   produtos: ProdutoRelatorio[];
   semPreco: number;
   margemMeta: number;
+  negocio: string;
+  apps: AppEntrega[];
 }) {
   const [aba, setAba] = useState<Aba>("geral");
   const [editandoMeta, setEditandoMeta] = useState(false);
@@ -148,46 +154,23 @@ export function TelaRelatorio({
     };
   }, [produtos, meta]);
 
+  const [gerando, startGerar] = useTransition();
   function baixar() {
-    const n = (v: number) => num(v, 2);
-    const linhas = [
-      [
-        "Produto",
-        "Categoria",
-        "Preço de venda",
-        "Custo de fabricação",
-        "Lucro por venda",
-        "Margem (%)",
-        "Situação",
-        ...COMPOSICAO.map((c) => c.rotulo),
-      ],
-      ...produtos.map((p) => [
-        p.nome,
-        p.categoria,
-        n(p.preco),
-        n(p.custo),
-        n(p.lucro),
-        n(p.margem),
-        p.margem >= meta ? "Acima da meta" : "Abaixo da meta",
-        ...COMPOSICAO.map((c) => n(p.composicao[c.chave])),
-      ]),
-    ];
-    const csv = linhas
-      .map((l) => l.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(";"))
-      .join("\r\n");
-    const url = URL.createObjectURL(
-      new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }),
-    );
-    const a = Object.assign(document.createElement("a"), {
-      href: url,
-      download: `relatorio-produtos-${new Date().toISOString().slice(0, 10)}.csv`,
+    startGerar(async () => {
+      try {
+        const { gerarPdfRelatorio } = await import("./pdf");
+        await gerarPdfRelatorio({ produtos, meta, negocio, apps, resumo });
+        notificar.sucesso(
+          "Relatório baixado",
+          "O PDF foi salvo na pasta de downloads.",
+        );
+      } catch {
+        notificar.erro(
+          "Não foi possível gerar o PDF",
+          "Tente de novo em instantes.",
+        );
+      }
     });
-    a.click();
-    URL.revokeObjectURL(url);
-    notificar.sucesso(
-      "Relatório baixado",
-      "Planilha com todos os produtos (abre no Excel ou Google Planilhas).",
-    );
   }
 
   return (
@@ -227,10 +210,14 @@ export function TelaRelatorio({
           size="lg"
           className="h-10 shadow-sm"
           onClick={baixar}
-          disabled={!produtos.length}
+          disabled={!produtos.length || gerando}
         >
-          <Download data-icon="inline-start" />
-          Baixar relatório
+          {gerando ? (
+            <LoaderCircle className="animate-spin" data-icon="inline-start" />
+          ) : (
+            <Download data-icon="inline-start" />
+          )}
+          {gerando ? "Gerando PDF..." : "Baixar relatório"}
         </Button>
       </div>
 
