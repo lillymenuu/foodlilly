@@ -588,3 +588,28 @@ export const categoriasFinanceiras = pgTable(
       .where(sql`${t.paiId} is not null`),
   ],
 );
+
+/** Financeiro > Fornecedores (e clientes) do negócio. */
+export const fornecedores = pgTable(
+  "fornecedores",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    negocioId: uuid("negocio_id")
+      .notNull()
+      .references(() => negocios.id, { onDelete: "cascade" }),
+    nome: text().notNull(),
+    /** Só dígitos. */
+    telefone: text(),
+    /** CPF ou CNPJ, sem máscara (o CNPJ pode ter letras). */
+    documento: text(),
+    email: text(),
+    observacoes: text(),
+    criadoEm: timestamp("criado_em", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    atualizadoEm: timestamp("atualizado_em", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("fornecedores_negocio_idx").on(t.negocioId)],
+);

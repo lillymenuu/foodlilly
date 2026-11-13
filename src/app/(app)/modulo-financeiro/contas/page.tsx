@@ -5,7 +5,7 @@ import { connection } from "next/server";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
-import { contasBancarias } from "@/db/schema";
+import { contasBancarias, fornecedores } from "@/db/schema";
 import { obterNegocioAtualId } from "@/lib/negocio-atual";
 
 import { garantirCategoriasPadrao, listarCategorias } from "./dados-categorias";
@@ -52,12 +52,31 @@ async function Conteudo({
   contas.sort((a, b) => Number(b.padrao) - Number(a.padrao));
   // Categorias padrão (Vendas → Revendas) quando já existe conta.
   if (contas.length) await garantirCategoriasPadrao(negocioId);
-  const categorias = contas.length ? await listarCategorias(negocioId) : [];
+  const [categorias, listaFornecedores] = contas.length
+    ? await Promise.all([
+        listarCategorias(negocioId),
+        db
+          .select({
+            id: fornecedores.id,
+            nome: fornecedores.nome,
+            telefone: fornecedores.telefone,
+            documento: fornecedores.documento,
+            email: fornecedores.email,
+            observacoes: fornecedores.observacoes,
+          })
+          .from(fornecedores)
+          .where(eq(fornecedores.negocioId, negocioId))
+          .orderBy(asc(fornecedores.nome)),
+      ])
+    : [[], []];
   return (
     <TelaContas
       contas={contas}
       categorias={categorias}
-      abaInicial={aba === "categorias" ? "categorias" : undefined}
+      fornecedores={listaFornecedores}
+      abaInicial={
+        aba === "categorias" || aba === "fornecedores" ? aba : undefined
+      }
     />
   );
 }

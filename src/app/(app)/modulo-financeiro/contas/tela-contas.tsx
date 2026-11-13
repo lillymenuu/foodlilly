@@ -38,7 +38,8 @@ import { plural } from "@/lib/texto";
 import { definirContaPadrao } from "./actions";
 import { CartaoConta, ModalConta, ModalExcluirConta } from "./modais";
 import { PainelCategorias } from "./categorias";
-import type { CategoriaFinanceira, Conta } from "./tipos";
+import { PainelFornecedores } from "./fornecedores";
+import type { CategoriaFinanceira, Conta, Fornecedor } from "./tipos";
 
 type Modal =
   | { tipo: "nova" }
@@ -50,13 +51,15 @@ type Modal =
 export function TelaContas({
   contas,
   categorias,
+  fornecedores,
   abaInicial,
 }: {
   contas: Conta[];
   categorias: CategoriaFinanceira[];
-  abaInicial?: "categorias";
+  fornecedores: Fornecedor[];
+  abaInicial?: "categorias" | "fornecedores";
 }) {
-  const [aba, setAba] = useState<"contas" | "categorias">(
+  const [aba, setAba] = useState<"contas" | "categorias" | "fornecedores">(
     abaInicial && contas.length ? abaInicial : "contas",
   );
   // Sem contas: abre o convite para configurar (como na primeira visita).
@@ -129,16 +132,24 @@ export function TelaContas({
             bloqueada={vazio}
           />
           <Aba
+            ativa={aba === "fornecedores"}
+            onClick={() => setAba("fornecedores")}
             icone={Users}
             titulo="Fornecedores"
-            detalhe={vazio ? "Cadastre uma conta primeiro" : "Em breve"}
-            bloqueada
+            detalhe={
+              vazio
+                ? "Cadastre uma conta primeiro"
+                : plural(fornecedores.length, "cadastrado", "cadastrados")
+            }
+            bloqueada={vazio}
           />
         </div>
       </section>
 
       {aba === "categorias" && !vazio ? (
         <PainelCategorias categorias={categorias} />
+      ) : aba === "fornecedores" && !vazio ? (
+        <PainelFornecedores fornecedores={fornecedores} />
       ) : vazio ? (
         <BoasVindas onNova={() => setModal({ tipo: "nova" })} />
       ) : (

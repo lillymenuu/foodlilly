@@ -149,3 +149,45 @@ export function errosDoZod(e: z.ZodError) {
   }
   return erros;
 }
+
+/**
+ * CNPJ com dígitos verificadores válidos. Aceita o CNPJ alfanumérico (letras nas 12
+ * primeiras posições, em vigor desde julho de 2026): cada caractere vale código ASCII − 48.
+ */
+export function cnpjValido(valor: string) {
+  const c = valor.toUpperCase().replace(/[^0-9A-Z]/g, "");
+  if (!/^[0-9A-Z]{12}\d{2}$/.test(c) || /^(\d)\1{13}$/.test(c)) return false;
+  const dv = (n: number) => {
+    let soma = 0;
+    for (let i = 0; i < n; i++)
+      soma += (c.charCodeAt(i) - 48) * (((n - 1 - i) % 8) + 2);
+    const r = soma % 11;
+    return r < 2 ? 0 : 11 - r;
+  };
+  return dv(12) === Number(c[12]) && dv(13) === Number(c[13]);
+}
+
+/** CPF (até 11 dígitos) ou CNPJ (14 caracteres, pode ter letras) com a máscara certa. */
+export function mascaraDocumento(valor: string) {
+  const c = valor
+    .toUpperCase()
+    .replace(/[^0-9A-Z]/g, "")
+    .slice(0, 14);
+  if (/^\d{0,11}$/.test(c)) return mascaraCpf(c);
+  return c
+    .replace(/^(\w{2})(\w)/, "$1.$2")
+    .replace(/^(\w{2})\.(\w{3})(\w)/, "$1.$2.$3")
+    .replace(/^(\w{2})\.(\w{3})\.(\w{3})(\w)/, "$1.$2.$3/$4")
+    .replace(/\/(\w{4})(\w{1,2})$/, "/$1-$2");
+}
+
+/** Documento vazio, CPF válido ou CNPJ válido. */
+export function documentoValido(valor: string) {
+  const c = valor.toUpperCase().replace(/[^0-9A-Z]/g, "");
+  if (!c) return true;
+  return c.length === 11
+    ? cpfValido(c)
+    : c.length === 14
+      ? cnpjValido(c)
+      : false;
+}

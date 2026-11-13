@@ -60,6 +60,15 @@ export type CategoriaFinanceira = {
   paiId: string | null;
 };
 
+export type Fornecedor = {
+  id: string;
+  nome: string;
+  telefone: string | null;
+  documento: string | null;
+  email: string | null;
+  observacoes: string | null;
+};
+
 /** Dados enviados pelo formulário. */
 export type DadosConta = {
   nome: string;

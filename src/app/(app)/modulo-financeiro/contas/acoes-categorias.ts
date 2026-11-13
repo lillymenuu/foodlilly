@@ -165,14 +165,12 @@ export async function criarSubcategoria(
         ok: false,
         mensagem: `Limite de ${LIMITES_CATEGORIA.subPorPrincipal} subcategorias atingido.`,
       };
-    await db
-      .insert(categoriasFinanceiras)
-      .values({
-        negocioId,
-        grupo: pai.grupo,
-        nome: n.data,
-        paiId: principalId,
-      });
+    await db.insert(categoriasFinanceiras).values({
+      negocioId,
+      grupo: pai.grupo,
+      nome: n.data,
+      paiId: principalId,
+    });
   } catch (e) {
     if (duplicado(e)) return JA_EXISTE;
     console.error("Erro ao criar subcategoria", e);
