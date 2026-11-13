@@ -613,3 +613,63 @@ export const fornecedores = pgTable(
   },
   (t) => [index("fornecedores_negocio_idx").on(t.negocioId)],
 );
+
+export const FORMAS_PAGAMENTO = [
+  "dinheiro",
+  "pix",
+  "boleto",
+  "credito",
+  "debito",
+  "transferencia",
+  "cheque",
+  "outro",
+] as const;
+
+/** Financeiro > Gastos e recebimentos: cada entrada ou saída de dinheiro. */
+export const lancamentos = pgTable(
+  "lancamentos",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    negocioId: uuid("negocio_id")
+      .notNull()
+      .references(() => negocios.id, { onDelete: "cascade" }),
+    /** Conta com lançamentos não pode ser excluída (sem cascade). */
+    contaId: uuid("conta_id")
+      .notNull()
+      .references(() => contasBancarias.id),
+    grupo: text({ enum: GRUPOS_FINANCEIROS }).notNull(),
+    /** Subcategoria (a principal é a "pai" dela). Categoria com lançamentos não pode ser excluída. */
+    categoriaId: uuid("categoria_id")
+      .notNull()
+      .references(() => categoriasFinanceiras.id),
+    data: date({ mode: "string" }).notNull(),
+    /** Sempre positivo; recebimentos entram, os outros grupos saem. */
+    valor: numeric({ precision: 14, scale: 2, mode: "number" }).notNull(),
+    descricao: text(),
+    fornecedorId: uuid("fornecedor_id").references(() => fornecedores.id, {
+      onDelete: "set null",
+    }),
+    /** Nome digitado quando não é um fornecedor cadastrado. */
+    pessoaNome: text("pessoa_nome"),
+    formaPagamento: text("forma_pagamento", { enum: FORMAS_PAGAMENTO }),
+    /** Pago (gasto) ou recebido (recebimento). */
+    pago: boolean().notNull().default(false),
+    /** Série de parcelas ou de recorrência (mesmo id em todos). */
+    serieId: uuid("serie_id"),
+    serieTipo: text("serie_tipo", { enum: ["parcela", "recorrente"] }),
+    serieNumero: integer("serie_numero"),
+    serieTotal: integer("serie_total"),
+    criadoEm: timestamp("criado_em", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    atualizadoEm: timestamp("atualizado_em", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("lancamentos_negocio_data_idx").on(t.negocioId, t.data),
+    index("lancamentos_conta_idx").on(t.contaId),
+    index("lancamentos_categoria_idx").on(t.categoriaId),
+    index("lancamentos_serie_idx").on(t.serieId),
+  ],
+);

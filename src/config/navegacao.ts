@@ -213,7 +213,7 @@ export const navegacao: Modulo[] = [
       },
       {
         titulo: "Gastos e recebimentos",
-        href: "/modulo-financeiro/lancamentos",
+        href: "/modulo-financeiro/gastos-recebimentos",
         icone: TrendingUp,
         descricao: "Entradas e saídas do dia a dia.",
       },

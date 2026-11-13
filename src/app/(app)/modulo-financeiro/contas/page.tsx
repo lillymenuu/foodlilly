@@ -8,6 +8,7 @@ import { db } from "@/db";
 import { contasBancarias, fornecedores } from "@/db/schema";
 import { obterNegocioAtualId } from "@/lib/negocio-atual";
 
+import { saldosDasContas } from "../saldos";
 import { garantirCategoriasPadrao, listarCategorias } from "./dados-categorias";
 import { TelaContas } from "./tela-contas";
 import type { Conta } from "./tipos";
@@ -37,14 +38,14 @@ async function Conteudo({
     .from(contasBancarias)
     .where(eq(contasBancarias.negocioId, negocioId))
     .orderBy(asc(contasBancarias.criadoEm));
+  const saldos = await saldosDasContas(negocioId);
   const contas: Conta[] = linhas.map((c) => ({
     id: c.id,
     nome: c.nome,
     tipo: c.tipo,
     saldoInicial: c.saldoInicial,
     dataSaldoInicial: c.dataSaldoInicial,
-    // Sem lançamentos ainda: o saldo atual é o inicial. Quando os lançamentos existirem, somar aqui.
-    saldoAtual: c.saldoInicial,
+    saldoAtual: saldos.get(c.id) ?? c.saldoInicial,
     padrao: c.padrao,
     cor: c.cor,
   }));

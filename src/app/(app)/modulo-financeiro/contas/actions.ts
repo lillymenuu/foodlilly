@@ -5,7 +5,12 @@ import { refresh } from "next/cache";
 import { z } from "zod";
 
 import { db } from "@/db";
-import { contasBancarias, CORES_CONTA, TIPOS_CONTA } from "@/db/schema";
+import {
+  contasBancarias,
+  CORES_CONTA,
+  lancamentos,
+  TIPOS_CONTA,
+} from "@/db/schema";
 import { obterNegocioAtualId } from "@/lib/negocio-atual";
 import { errosPorCampo, type ResultadoSalvar } from "@/lib/validacao";
 
@@ -175,6 +180,20 @@ export async function excluirConta(contaId: string): Promise<ResultadoSalvar> {
   const negocioId = await obterNegocioAtualId();
   if (!id.safeParse(contaId).success) return NAO_ENCONTRADA;
   try {
+    const [{ usados }] = await db
+      .select({ usados: count() })
+      .from(lancamentos)
+      .where(
+        and(
+          eq(lancamentos.contaId, contaId),
+          eq(lancamentos.negocioId, negocioId),
+        ),
+      );
+    if (usados > 0)
+      return {
+        ok: false,
+        mensagem: `Esta conta tem ${usados} lançamento(s). Exclua ou mova os lançamentos antes de excluir a conta.`,
+      };
     const excluidas = await db
       .delete(contasBancarias)
       .where(

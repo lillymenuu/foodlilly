@@ -1,11 +1,11 @@
 "use server";
 
-import { and, count, eq, isNotNull, isNull } from "drizzle-orm";
+import { and, count, eq, isNotNull, isNull, or } from "drizzle-orm";
 import { refresh } from "next/cache";
 import { z } from "zod";
 
 import { db } from "@/db";
-import { categoriasFinanceiras } from "@/db/schema";
+import { categoriasFinanceiras, lancamentos } from "@/db/schema";
 import { obterNegocioAtualId } from "@/lib/negocio-atual";
 import type { ResultadoSalvar } from "@/lib/validacao";
 
@@ -223,6 +223,28 @@ export async function excluirCategoriaFinanceira(
   const negocioId = await obterNegocioAtualId();
   if (!id.safeParse(categoriaId).success) return NAO_ENCONTRADA;
   try {
+    // Categoria (ou subcategoria dela) usada em lançamentos não pode ser excluída.
+    const [{ usados }] = await db
+      .select({ usados: count() })
+      .from(lancamentos)
+      .innerJoin(
+        categoriasFinanceiras,
+        eq(categoriasFinanceiras.id, lancamentos.categoriaId),
+      )
+      .where(
+        and(
+          eq(lancamentos.negocioId, negocioId),
+          or(
+            eq(categoriasFinanceiras.id, categoriaId),
+            eq(categoriasFinanceiras.paiId, categoriaId),
+          ),
+        ),
+      );
+    if (usados > 0)
+      return {
+        ok: false,
+        mensagem: `Está em uso em ${usados} lançamento(s). Altere esses lançamentos antes de excluir.`,
+      };
     const excluidas = await db
       .delete(categoriasFinanceiras)
       .where(
