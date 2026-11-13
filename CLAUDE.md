@@ -94,11 +94,11 @@ Pasta `src/app/(app)/modulo-precificacao/receitas/`. Rotas: central `/receitas`,
 - **Margem meta**: coluna `negocios.margem_meta` (padrão 30), editada pelo lápis do indicador (`salvarMargemMeta`).
 - Gráficos: shadcn `chart` (Recharts 3). Cores por categoria em `--serie-1..5` (`globals.css`, utilitários `bg-serie-N`), ordem **validada para daltonismo** com o validador de paletas: não reordenar nem trocar sem validar. Legenda sempre visível; animações respeitam `prefers-reduced-motion`.
 
-## Financeiro ()
+## Financeiro (`modulo-financeiro/`)
 
-- **Contas** (, "Configurações financeiras"): tabela  (nome, tipo: corrente/poupança/carteira digital/pagamento/outro, saldo inicial que pode ser negativo, data do saldo inicial, padrão, cor do cartão). **Uma conta padrão por negócio** (índice único parcial): a primeira é sempre a padrão; a padrão só deixa de ser quando outra é marcada; ao excluir a padrão, a mais antiga vira padrão.
-- Tela: banner com as abas Contas bancárias, Categorias e Fornecedores (as duas últimas com cadeado até existir conta; ainda "Em breve"), boas-vindas com 3 passos e modal "Vamos configurar juntos" quando não há contas, cartões no estilo cartão de banco (cores  em ), menu ⋮ com Editar, Definir como padrão e Excluir.
-- **Saldo atual = saldo inicial** por enquanto; quando existirem lançamentos, somar os lançamentos a partir de  em .
+- **Contas** (`/modulo-financeiro/contas`, "Configurações financeiras"): tabela `contas_bancarias` (nome, tipo: corrente/poupança/carteira digital/pagamento/outro, saldo inicial que pode ser negativo, data do saldo inicial, padrão, cor do cartão). **Uma conta padrão por negócio** (índice único parcial): a primeira é sempre a padrão; a padrão só deixa de ser quando outra é marcada; ao excluir a padrão, a mais antiga vira padrão.
+- Tela: banner com as abas Contas bancárias, Categorias e Fornecedores (as duas últimas com cadeado até existir conta; ainda "Em breve"), boas-vindas com 3 passos e modal "Vamos configurar juntos" quando não há contas, cartões no estilo cartão de banco (cores `--cartao-*` em `globals.css`), menu ⋮ com Editar, Definir como padrão e Excluir.
+- **Saldo atual = saldo inicial** por enquanto; quando existirem lançamentos, somar os lançamentos a partir de `data_saldo_inicial` em `contas/page.tsx`.
 
 ## Acesso (login, cadastro, teste grátis)
 
