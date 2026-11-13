@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  useTransition,
-} from "react";
+import { useLayoutEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import {
   ArrowDownRight,
@@ -34,6 +27,7 @@ import {
 import { cn } from "cn";
 
 import { CampoModal, ModalFormulario } from "@/components/cadastro";
+import { NumeroAnimado } from "@/components/numero-animado";
 import { SelectNativo } from "@/components/cadastro/select-nativo";
 import { notificar } from "@/components/notificacoes";
 import { Button } from "@/components/ui/button";
@@ -392,47 +386,6 @@ function Banner({ total, meta }: { total: number; meta: number }) {
   );
 }
 
-// ------------------------------------------------------------------ Números que sobem
-
-function useContagem(alvo: number, duracao = 900) {
-  const [valor, setValor] = useState(0);
-  const anterior = useRef(0);
-  useEffect(() => {
-    const inicio = anterior.current;
-    const reduzir = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-    let t0: number | null = null;
-    let id = 0;
-    const passo = (t: number) => {
-      t0 ??= t;
-      const p = reduzir ? 1 : Math.min(1, (t - t0) / duracao);
-      const suave = 1 - (1 - p) ** 3;
-      setValor(inicio + (alvo - inicio) * suave);
-      if (p < 1) id = requestAnimationFrame(passo);
-      else anterior.current = alvo;
-    };
-    id = requestAnimationFrame(passo);
-    return () => cancelAnimationFrame(id);
-  }, [alvo, duracao]);
-  return valor;
-}
-
-function Numero({
-  valor,
-  formato,
-}: {
-  valor: number;
-  formato: (v: number) => string;
-}) {
-  const v = useContagem(valor);
-  return (
-    <span className="tabular-nums" aria-label={formato(valor)}>
-      <span aria-hidden>{formato(v)}</span>
-    </span>
-  );
-}
-
 // ------------------------------------------------------------------ Visão geral
 
 const TONS = {
@@ -524,7 +477,7 @@ function VisaoGeral({
           tom="azul"
           rodape={`Preço de 1 unidade de cada um dos ${plural(produtos.length, "produto", "produtos")}`}
         >
-          <Numero valor={resumo.receita} formato={formatarMoeda} />
+          <NumeroAnimado valor={resumo.receita} formato={formatarMoeda} />
         </Kpi>
         <Kpi
           titulo="Custo total"
@@ -533,7 +486,7 @@ function VisaoGeral({
           rodape="Custo de fabricação somado"
           atraso={60}
         >
-          <Numero valor={resumo.custo} formato={formatarMoeda} />
+          <NumeroAnimado valor={resumo.custo} formato={formatarMoeda} />
         </Kpi>
         <Kpi
           titulo="Lucro total"
@@ -542,7 +495,7 @@ function VisaoGeral({
           rodape="Receita − custos"
           atraso={120}
         >
-          <Numero valor={resumo.lucro} formato={formatarMoeda} />
+          <NumeroAnimado valor={resumo.lucro} formato={formatarMoeda} />
         </Kpi>
         <Kpi
           titulo="Margem média"
@@ -561,7 +514,7 @@ function VisaoGeral({
           }
           atraso={180}
         >
-          <Numero valor={resumo.media} formato={(v) => `${num(v)}%`} />
+          <NumeroAnimado valor={resumo.media} formato={(v) => `${num(v)}%`} />
         </Kpi>
         <Kpi
           titulo="Margem meta"
@@ -1030,7 +983,7 @@ function Composicao({
                   {c.rotulo}
                 </span>
                 <span className="text-lg font-bold tabular-nums">
-                  <Numero valor={valor} formato={formatarMoeda} />
+                  <NumeroAnimado valor={valor} formato={formatarMoeda} />
                 </span>
                 <div className="h-1.5 overflow-hidden rounded-full bg-muted">
                   <div

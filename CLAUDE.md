@@ -80,6 +80,11 @@ Pasta `src/app/(app)/modulo-precificacao/receitas/`. Rotas: central `/receitas`,
 - Receita (massa/recheio): seletor Massa | Recheio na ficha (troca zera a categoria; produto não troca de tipo); categoria e peso total obrigatórios; **tempo de preparo é calculado** = minutos de mão de obra + equipamentos (gravado em `tempo_preparo_min`).
 - Pendente: foto, PDF da ficha, compartilhar, "meta de vendas".
 
+## Custeio: Resumo financeiro
+
+- "Ver detalhes" abre um modal (`custeio/modal-resumo.tsx`) no estilo dos Relatórios: indicadores animados (receita, custos fixos, margem líquida, alíquota), barra "para onde vai a receita" com as marcas de 20% (atenção) e 30% (limite), rosca por grupo ligada aos cards, ranking dos maiores custos e uma dica conforme a situação. Grupos usam `--serie-1..5` pela ordem fixa do Custeio.
+- Números que sobem: `NumeroAnimado` / `useContagem` em `src/components/numero-animado.tsx` (usados também nos Relatórios).
+
 ## Relatórios (`modulo-precificacao/relatorios/`)
 
 - Lê os produtos com preço calculado (`carregarTudo`), valores por 1 unidade vendida: preço, custo = custo de fabricação, lucro = preço − custo, margem da ficha. Produtos sem preço válido ficam de fora (aviso na tela).
