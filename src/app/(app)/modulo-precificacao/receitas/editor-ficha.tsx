@@ -499,11 +499,12 @@ export function EditorFicha(props: PropsEditor) {
     tipo !== "produto" && !estado.categoriaId && "categoria",
     estado.itens.length === 0 && "composição",
   ].filter(Boolean) as string[];
+  const nivelMargem = classificarMargem(margemNum);
   // Selo só nos produtos (classificação da margem).
   const selo =
     tipo === "produto"
       ? {
-          ...classificarMargem(margemNum),
+          ...nivelMargem,
           dica: "Classificação da margem de lucro",
         }
       : null;
@@ -677,12 +678,22 @@ export function EditorFicha(props: PropsEditor) {
                   sufixo="%"
                   valor={estado.margem}
                   erro={erros.margem}
+                  selo={estado.margem.trim() ? nivelMargem : undefined}
+                  alerta={
+                    Boolean(estado.margem.trim()) &&
+                    nivelMargem.nivel === "ruim"
+                  }
                   onAlterar={(v) => set("margem", v)}
                 >
-                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-foreground/10">
                     <div
-                      className="h-full rounded-full bg-highlight"
-                      style={{ width: `${Math.min(100, margemNum)}%` }}
+                      className={cn(
+                        "h-full rounded-full transition-[width] duration-500 ease-out motion-reduce:transition-none",
+                        nivelMargem.barra,
+                      )}
+                      style={{
+                        width: `${Math.min(100, Math.max(0, margemNum))}%`,
+                      }}
                     />
                   </div>
                 </CampoNumeroFicha>
@@ -741,7 +752,7 @@ export function EditorFicha(props: PropsEditor) {
                 rotulo="Lucro/venda"
                 valor={p?.valido ? formatarMoeda(p.lucro) : "—"}
               >
-                {p?.valido && <Selo {...classificarMargem(margemNum)} />}
+                {p?.valido && <Selo {...nivelMargem} />}
               </Numero>
               <Numero
                 rotulo="Custo fabricação"
@@ -1355,6 +1366,8 @@ function CampoNumeroFicha({
   placeholder,
   pendente,
   leitura,
+  selo,
+  alerta,
   onAlterar,
   children,
 }: {
@@ -1369,20 +1382,26 @@ function CampoNumeroFicha({
   pendente?: boolean;
   /** Visualização: mostra o valor sem permitir digitar. */
   leitura?: boolean;
+  /** Selo no canto do card (ex.: classificação da margem). */
+  selo?: { rotulo: string; classe: string };
+  /** Card em vermelho (ex.: margem ruim), também na visualização. */
+  alerta?: boolean;
   onAlterar: (v: string) => void;
   children?: React.ReactNode;
 }) {
   return (
     <div
       className={cn(
-        "rounded-xl border p-3",
-        leitura
-          ? "border-transparent bg-muted/60"
-          : erro
-            ? "border-destructive/60 bg-destructive/5"
-            : pendente
-              ? "border-destructive/40"
-              : "border-highlight/50 bg-highlight-soft/30",
+        "rounded-xl border p-3 transition-colors",
+        alerta && !erro
+          ? "border-destructive/60 bg-destructive/5"
+          : leitura
+            ? "border-transparent bg-muted/60"
+            : erro
+              ? "border-destructive/60 bg-destructive/5"
+              : pendente
+                ? "border-destructive/40"
+                : "border-highlight/50 bg-highlight-soft/30",
       )}
     >
       <label
@@ -1394,6 +1413,16 @@ function CampoNumeroFicha({
         {pendente && !leitura && (
           <span className="ml-auto rounded bg-destructive/10 px-1.5 py-px text-[10px] font-semibold text-destructive">
             Pendente
+          </span>
+        )}
+        {selo && !(pendente && !leitura) && (
+          <span
+            className={cn(
+              "ml-auto rounded px-1.5 py-px text-[10px] font-semibold",
+              selo.classe,
+            )}
+          >
+            {selo.rotulo}
           </span>
         )}
       </label>
@@ -1411,6 +1440,7 @@ function CampoNumeroFicha({
             leitura
               ? "border-transparent"
               : "border-border focus:border-highlight",
+            alerta && "text-destructive",
           )}
         />
         <span className="shrink-0 text-xs text-muted-foreground">{sufixo}</span>

@@ -111,7 +111,11 @@ export function ListaFichas({
   const [ocupado, startAcao] = useTransition();
   const [acaoEm, setAcaoEm] = useState<string>();
   // Grade ou lista: lembrada neste navegador.
-  const visao = useSyncExternalStore(assinarVisao, lerVisao, () => "grade" as Visao);
+  const visao = useSyncExternalStore(
+    assinarVisao,
+    lerVisao,
+    () => "grade" as Visao,
+  );
   function escolherVisao(v: Visao) {
     try {
       localStorage.setItem(CHAVE_VISAO, v);
@@ -488,7 +492,9 @@ function CardFicha({
               item.margem != null
                 ? formatarPercentual(item.margem / 100, 0)
                 : "—",
-            destaque: classe?.rotulo === "Boa",
+            destaque:
+              classe != null &&
+              ["boa", "otima", "excelente"].includes(classe.nivel),
           },
         ]
       : [

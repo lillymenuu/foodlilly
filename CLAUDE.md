@@ -74,7 +74,8 @@ Pasta `src/app/(app)/modulo-precificacao/receitas/`. Rotas: central `/receitas`,
   - insumo = quantidade × custo real da unidade (com perda); receita/produto vinculado = gramas ÷ peso total × custo total
   - CMV = só ingredientes, sem embalagens (inclusive os das fichas vinculadas)
   - produto (só produtos têm margem e preço; a ficha de receita mostra só custos, como na referência): fabricação = custo/porção × (1 + % de custo fixo do Custeio) (acréscimo, não divisão: conferido com 5,40 × 1,432 = 7,73); preço = fabricação ÷ (1 − margem − imposto − taxa do crédito); revenda = fabricação ÷ (1 − margem revenda − imposto); marketplace = preço ÷ (1 − taxa do app)
-- Lista (`lista-fichas.tsx`): Grade | Lista (lembrada no navegador). Card de produto mostra o preço no 1º app de entrega com "+N" (demais no `title`), Custo/Venda/Margem e faixa "Margem boa/regular/baixa" (`classificarMargem`).
+- Lista (`lista-fichas.tsx`): Grade | Lista (lembrada no navegador). Card de produto mostra o preço no 1º app de entrega com "+N" (demais no `title`), Custo/Venda/Margem e faixa da margem (`classificarMargem`).
+- Classificação da margem (`classificarMargem` em `calculo.ts`): abaixo de 35% Ruim (card da margem em vermelho), 35–40% Regular, a partir de 40% Boa, 60% Ótima e 90% Excelente (Ótima e Excelente com brilho animado na barra, utilitário `animate-brilho` em `globals.css`, parado com `prefers-reduced-motion`).
 - Vínculos circulares são bloqueados (`dependentesDe`) no editor e no servidor.
 - Receita (massa/recheio): seletor Massa | Recheio na ficha (troca zera a categoria; produto não troca de tipo); categoria e peso total obrigatórios; **tempo de preparo é calculado** = minutos de mão de obra + equipamentos (gravado em `tempo_preparo_min`).
 - Pendente: foto, PDF da ficha, compartilhar, "meta de vendas".

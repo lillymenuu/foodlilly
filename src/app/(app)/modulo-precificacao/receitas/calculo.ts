@@ -16,7 +16,13 @@
  */
 
 export type TipoFicha = "massa" | "recheio" | "produto";
-export type TipoItem = "ingrediente" | "embalagem" | "receita" | "produto" | "mao_obra" | "equipamento";
+export type TipoItem =
+  | "ingrediente"
+  | "embalagem"
+  | "receita"
+  | "produto"
+  | "mao_obra"
+  | "equipamento";
 
 export type ItemFicha = { tipo: TipoItem; refId: string; quantidade: number };
 
@@ -46,7 +52,12 @@ export type InsumoRef = {
   custoUnitario: number;
 };
 export type FuncionarioRef = { id: string; nome: string; custoMinuto: number };
-export type EquipamentoRef = { id: string; nome: string; detalhe: string; custoMinuto: number };
+export type EquipamentoRef = {
+  id: string;
+  nome: string;
+  detalhe: string;
+  custoMinuto: number;
+};
 
 export type Parametros = {
   /** Custos fixos ÷ receita bruta (Custeio), 0 a 1. */
@@ -65,9 +76,20 @@ export type Contexto = {
 };
 
 /** Custo e CMV totais + peso de uma ficha, para quem a usa como ingrediente. */
-export type ResumoRef = { nome: string; tipo: TipoFicha; custoTotal: number; cmvTotal: number; pesoTotalG: number | null };
+export type ResumoRef = {
+  nome: string;
+  tipo: TipoFicha;
+  custoTotal: number;
+  cmvTotal: number;
+  pesoTotalG: number | null;
+};
 
-export type ItemCalculado = ItemFicha & { nome: string; detalhe: string; custo: number; valido: boolean };
+export type ItemCalculado = ItemFicha & {
+  nome: string;
+  detalhe: string;
+  custo: number;
+  valido: boolean;
+};
 
 export type Preco = {
   fabricacao: number;
@@ -103,11 +125,15 @@ const ZERO: Record<TipoItem, number> = {
 };
 
 const UNIDADE_CURTA: Record<string, string> = { unidade: "un." };
-const qtd = (n: number) => n.toLocaleString("pt-BR", { maximumFractionDigits: 3 });
+const qtd = (n: number) =>
+  n.toLocaleString("pt-BR", { maximumFractionDigits: 3 });
 
 /** Calcula uma ficha. `refs` dá o resumo das fichas vinculadas (já calculadas). */
 export function calcularFicha(
-  ficha: Pick<FichaBase, "tipo" | "rendimento" | "pesoTotalG" | "margem" | "margemRevenda" | "itens">,
+  ficha: Pick<
+    FichaBase,
+    "tipo" | "rendimento" | "pesoTotalG" | "margem" | "margemRevenda" | "itens"
+  >,
   ctx: Contexto,
   refs: (id: string) => ResumoRef | undefined,
 ): Resultado {
@@ -166,7 +192,8 @@ export function calcularFicha(
   const rendimento = ficha.rendimento > 0 ? ficha.rendimento : 1;
   const custoPorcao = custoTotal / rendimento;
   const cmvPorcao = cmvTotal / rendimento;
-  const peso = ficha.pesoTotalG && ficha.pesoTotalG > 0 ? ficha.pesoTotalG : null;
+  const peso =
+    ficha.pesoTotalG && ficha.pesoTotalG > 0 ? ficha.pesoTotalG : null;
   const pesoPorcaoG = peso ? peso / rendimento : null;
 
   return {
@@ -179,7 +206,16 @@ export function calcularFicha(
     pesoPorcaoG,
     itens,
     // Só produtos têm preço de venda; receitas (massas, recheios) mostram os custos.
-    preco: ficha.tipo === "produto" ? calcularPreco(ficha, custoPorcao, cmvPorcao, pesoPorcaoG, ctx.parametros) : null,
+    preco:
+      ficha.tipo === "produto"
+        ? calcularPreco(
+            ficha,
+            custoPorcao,
+            cmvPorcao,
+            pesoPorcaoG,
+            ctx.parametros,
+          )
+        : null,
   };
 }
 
@@ -212,11 +248,56 @@ function calcularPreco(
   };
 }
 
-/** Classificação da margem de lucro sobre o preço (como na referência: 30% = Regular, 50% = Boa). */
-export function classificarMargem(margemPct: number) {
-  if (margemPct >= 40) return { rotulo: "Boa", classe: "bg-success/15 text-success" };
-  if (margemPct >= 20) return { rotulo: "Regular", classe: "bg-highlight text-highlight-foreground" };
-  return { rotulo: "Baixa", classe: "bg-destructive/10 text-destructive" };
+export type NivelMargem = "ruim" | "regular" | "boa" | "otima" | "excelente";
+
+/**
+ * Classificação da margem de lucro sobre o preço:
+ * abaixo de 35% Ruim · 35% a 40% Regular · 40% Boa · 60% Ótima · 90% Excelente.
+ * `classe` = selo; `barra` = barra de progresso (Ótima e Excelente com brilho).
+ */
+export function classificarMargem(margemPct: number): {
+  nivel: NivelMargem;
+  rotulo: string;
+  classe: string;
+  barra: string;
+} {
+  if (margemPct >= 90)
+    return {
+      nivel: "excelente",
+      rotulo: "Excelente",
+      classe:
+        "animate-brilho bg-[linear-gradient(110deg,var(--primary-strong)_35%,var(--primary)_50%,var(--primary-strong)_65%)] text-highlight",
+      barra:
+        "animate-brilho bg-[linear-gradient(110deg,var(--highlight-strong)_30%,var(--highlight-soft)_50%,var(--highlight-strong)_70%)] shadow-[0_0_10px_var(--highlight)]",
+    };
+  if (margemPct >= 60)
+    return {
+      nivel: "otima",
+      rotulo: "Ótima",
+      classe: "bg-success text-white",
+      barra:
+        "animate-brilho bg-[linear-gradient(110deg,var(--success)_35%,color-mix(in_oklab,var(--success)_45%,white)_50%,var(--success)_65%)]",
+    };
+  if (margemPct >= 40)
+    return {
+      nivel: "boa",
+      rotulo: "Boa",
+      classe: "bg-success/15 text-success",
+      barra: "bg-success",
+    };
+  if (margemPct >= 35)
+    return {
+      nivel: "regular",
+      rotulo: "Regular",
+      classe: "bg-highlight text-highlight-foreground",
+      barra: "bg-highlight",
+    };
+  return {
+    nivel: "ruim",
+    rotulo: "Ruim",
+    classe: "bg-destructive/10 text-destructive",
+    barra: "bg-destructive",
+  };
 }
 
 /**
@@ -233,7 +314,13 @@ export function calcularTodas(fichas: FichaBase[], ctx: Contexto) {
     if (!f) return undefined;
     const r = calcular(id);
     if (!r) return undefined;
-    return { nome: f.nome, tipo: f.tipo, custoTotal: r.custoTotal, cmvTotal: r.cmvTotal, pesoTotalG: f.pesoTotalG };
+    return {
+      nome: f.nome,
+      tipo: f.tipo,
+      custoTotal: r.custoTotal,
+      cmvTotal: r.cmvTotal,
+      pesoTotalG: f.pesoTotalG,
+    };
   };
 
   function calcular(id: string): Resultado | undefined {
@@ -254,7 +341,10 @@ export function calcularTodas(fichas: FichaBase[], ctx: Contexto) {
 }
 
 /** Fichas que usam `id` direta ou indiretamente (não podem ser vinculadas a ela: criaria ciclo). */
-export function dependentesDe(id: string, fichas: Pick<FichaBase, "id" | "itens">[]) {
+export function dependentesDe(
+  id: string,
+  fichas: Pick<FichaBase, "id" | "itens">[],
+) {
   const usadoPor = new Map<string, string[]>();
   for (const f of fichas) {
     for (const i of f.itens) {

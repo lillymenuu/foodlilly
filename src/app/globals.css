@@ -114,6 +114,23 @@
 
 /* Modo escuro: pendente (ver CLAUDE.md). */
 
+/* Brilho que passa devagar (margem Ótima/Excelente). Parado para quem prefere menos movimento. */
+@keyframes brilho {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+@utility animate-brilho {
+  background-size: 250% 100%;
+  animation: brilho 2.8s ease-in-out infinite;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
