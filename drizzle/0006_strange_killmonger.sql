@@ -1,0 +1,1 @@
+ALTER TABLE "negocios" ADD COLUMN "margem_meta" numeric(5, 2) DEFAULT 30 NOT NULL;

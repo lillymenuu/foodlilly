@@ -43,6 +43,13 @@
       "when": 1794508634389,
       "tag": "0005_faithful_mister_sinister",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794533573220,
+      "tag": "0006_strange_killmonger",
+      "breakpoints": true
     }
   ]
 }

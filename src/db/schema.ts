@@ -26,6 +26,8 @@ export const negocios = pgTable("negocios", {
   funcionariosPadraoEm: timestamp("funcionarios_padrao_em", { withTimezone: true }),
   /** Idem para as categorias de insumo padrão. */
   categoriasInsumoPadraoEm: timestamp("categorias_insumo_padrao_em", { withTimezone: true }),
+  /** Relatórios: margem de lucro que o negócio quer atingir (%). */
+  margemMeta: numeric("margem_meta", { precision: 5, scale: 2, mode: "number" }).notNull().default(30),
 });
 
 /**

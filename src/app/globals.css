@@ -19,6 +19,11 @@
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
   --color-chart-5: var(--chart-5);
+  --color-serie-1: var(--serie-1);
+  --color-serie-2: var(--serie-2);
+  --color-serie-3: var(--serie-3);
+  --color-serie-4: var(--serie-4);
+  --color-serie-5: var(--serie-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
@@ -98,6 +103,12 @@
   --chart-3: #4f7faf;
   --chart-4: #fdd78a;
   --chart-5: #8fa3b8;
+  /* Séries de gráfico por categoria (relatórios). Ordem validada para daltonismo: não reordenar. */
+  --serie-1: #2a78d6;
+  --serie-2: #eb6834;
+  --serie-3: #1baf7a;
+  --serie-4: #eda100;
+  --serie-5: #6250d6;
 
   --radius: 0.75rem;
 
@@ -123,6 +134,23 @@
     background-position: -100% 0;
   }
 }
+/* Relatórios: linha do banner que se desenha e barras que crescem. */
+@keyframes desenhar {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes crescer-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes crescer-y {
+  from {
+    transform: scaleY(0);
+  }
+}
+
 @utility animate-brilho {
   background-size: 250% 100%;
   animation: brilho 2.8s ease-in-out infinite;
@@ -138,7 +166,8 @@
   body {
     @apply bg-background text-foreground;
   }
-  button:not(:disabled), [role="button"]:not(:disabled) {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
     cursor: pointer;
   }
   html {

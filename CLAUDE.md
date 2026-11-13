@@ -80,6 +80,13 @@ Pasta `src/app/(app)/modulo-precificacao/receitas/`. Rotas: central `/receitas`,
 - Receita (massa/recheio): seletor Massa | Recheio na ficha (troca zera a categoria; produto não troca de tipo); categoria e peso total obrigatórios; **tempo de preparo é calculado** = minutos de mão de obra + equipamentos (gravado em `tempo_preparo_min`).
 - Pendente: foto, PDF da ficha, compartilhar, "meta de vendas".
 
+## Relatórios (`modulo-precificacao/relatorios/`)
+
+- Lê os produtos com preço calculado (`carregarTudo`), valores por 1 unidade vendida: preço, custo = custo de fabricação, lucro = preço − custo, margem da ficha. Produtos sem preço válido ficam de fora (aviso na tela).
+- Abas: Visão geral (indicadores, maior/menor margem, lista com filtro pela meta), Composição de custos (rosca + cards; passar o mouse num card destaca a fatia; variância e desvio padrão populacionais da margem) e Análise (margem por produto com linha da meta; preço = custo + lucro). "Baixar relatório" gera CSV (`;`, BOM, números pt-BR).
+- **Margem meta**: coluna `negocios.margem_meta` (padrão 30), editada pelo lápis do indicador (`salvarMargemMeta`).
+- Gráficos: shadcn `chart` (Recharts 3). Cores por categoria em `--serie-1..5` (`globals.css`, utilitários `bg-serie-N`), ordem **validada para daltonismo** com o validador de paletas: não reordenar nem trocar sem validar. Legenda sempre visível; animações respeitam `prefers-reduced-motion`.
+
 ## Armadilhas já resolvidas (não repetir)
 
 - `<Button render={<Link />}>`: o `Button` já passa `nativeButton={false}` sozinho quando há `render`; sem isso o Base UI avisa e dá erro de hidratação.
