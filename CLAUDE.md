@@ -82,6 +82,7 @@ Pasta `src/app/(app)/modulo-precificacao/receitas/`. Rotas: central `/receitas`,
 
 ## Custeio: Resumo financeiro
 
+- Banner e card do Resumo ficam lado a lado a partir de `xl` (grid 3fr/2fr em `form-custeio.tsx`); abaixo disso, um embaixo do outro. O aviso de alíquota crítica (`AvisoCustoFixo`) fica abaixo dos dois.
 - "Ver detalhes" abre um modal (`custeio/modal-resumo.tsx`) no estilo dos Relatórios: indicadores animados (receita, custos fixos, margem líquida, alíquota), barra "para onde vai a receita" com as marcas de 20% (atenção) e 30% (limite), rosca por grupo ligada aos cards, ranking dos maiores custos e uma dica conforme a situação. Grupos usam `--serie-1..5` pela ordem fixa do Custeio.
 - Números que sobem: `NumeroAnimado` / `useContagem` em `src/components/numero-animado.tsx` (usados também nos Relatórios).
 

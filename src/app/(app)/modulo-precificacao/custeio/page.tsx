@@ -36,10 +36,18 @@ async function Conteudo() {
 
   // Sem nada salvo ainda: mostra os valores sugeridos para o cliente ajustar.
   const valores: ValoresCusteio = linha
-    ? (Object.fromEntries(campos.map((c) => [c.chave, linha[c.chave]])) as ValoresCusteio)
+    ? (Object.fromEntries(
+        campos.map((c) => [c.chave, linha[c.chave]]),
+      ) as ValoresCusteio)
     : valoresPadrao;
 
-  return <FormCusteio inicial={valores} extrasIniciais={extras} jaSalvo={Boolean(linha)} />;
+  return (
+    <FormCusteio
+      inicial={valores}
+      extrasIniciais={extras}
+      jaSalvo={Boolean(linha)}
+    />
+  );
 }
 
 function Carregando() {

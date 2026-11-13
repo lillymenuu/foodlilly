@@ -40,6 +40,24 @@ function situacaoDa(aliquota: number): Situacao {
   };
 }
 
+/** Alerta abaixo dos cards quando a alíquota passa do limite. */
+export function AvisoCustoFixo({
+  receita,
+  totalCustos,
+}: {
+  receita: number;
+  totalCustos: number;
+}) {
+  if (receita <= 0 || totalCustos / receita <= LIMITE_CUSTO_FIXO) return null;
+  return (
+    <Aviso tipo="erro">
+      Alíquota acima de {formatarPercentual(LIMITE_CUSTO_FIXO, 0)}: os custos
+      fixos estão pesando demais no faturamento. Considere reduzir custos ou
+      aumentar a receita para melhorar a margem de lucro.
+    </Aviso>
+  );
+}
+
 export function ResumoFinanceiro({
   receita,
   totalCustos,
@@ -55,68 +73,103 @@ export function ResumoFinanceiro({
   const aliquota = receita > 0 ? totalCustos / receita : null;
   const situacao = aliquota != null ? situacaoDa(aliquota) : null;
   const critico = aliquota != null && aliquota > LIMITE_CUSTO_FIXO;
+  const margem = aliquota != null ? 1 - aliquota : null;
 
   return (
     <>
-      <div
+      <section
         className={cn(
-          "flex flex-col gap-3 rounded-2xl bg-card p-4 ring-1 ring-foreground/10 sm:p-5 md:flex-row md:items-center",
+          "flex h-full flex-col gap-4 rounded-2xl bg-card p-5 ring-1 ring-foreground/10 sm:p-6",
           critico && "bg-destructive/5 ring-destructive/30",
         )}
       >
-        <div className="flex min-w-0 flex-1 items-center gap-3">
+        <div className="flex items-start gap-3">
           <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
             <ReceiptText className="size-5" />
           </span>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <h2 className="font-semibold">Resumo financeiro</h2>
-            <p className="text-sm text-muted-foreground tabular-nums">
-              Total:{" "}
-              <strong className="text-foreground">
-                {formatarMoeda(totalCustos)}
-              </strong>
-              {aliquota != null && (
-                <>
-                  {" · "}Margem:{" "}
-                  <strong className="text-foreground">
-                    {formatarPercentual(1 - aliquota)}
-                  </strong>
-                </>
-              )}
+            <p className="text-xs text-muted-foreground">
+              Custos fixos × receita do mês
             </p>
           </div>
-        </div>
-        <div className="flex flex-wrap items-center justify-between gap-2 md:justify-end">
           <span
             className={cn(
-              "rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums",
+              "shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold",
               situacao?.selo ?? "bg-muted text-muted-foreground",
             )}
           >
-            {aliquota == null
-              ? "Informe a receita"
-              : `Alíquota: ${formatarPercentual(aliquota)}`}
+            {situacao?.rotulo ?? "Informe a receita"}
           </span>
+        </div>
+
+        <dl className="grid grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)] gap-3">
+          <div className="min-w-0">
+            <dt className="text-xs text-muted-foreground">Custos fixos</dt>
+            <dd className="truncate text-base font-bold tabular-nums sm:text-lg">
+              {formatarMoeda(totalCustos)}
+            </dd>
+          </div>
+          <div className="min-w-0">
+            <dt className="text-xs text-muted-foreground">Alíquota</dt>
+            <dd
+              className={cn("text-base font-bold tabular-nums sm:text-lg", situacao?.texto)}
+            >
+              {aliquota != null ? formatarPercentual(aliquota) : "—"}
+            </dd>
+          </div>
+          <div className="min-w-0">
+            <dt className="text-xs text-muted-foreground">Margem</dt>
+            <dd
+              className={cn(
+                "text-base font-bold tabular-nums sm:text-lg",
+                margem != null && margem >= 0
+                  ? "text-success"
+                  : "text-destructive",
+              )}
+            >
+              {margem != null ? formatarPercentual(margem) : "—"}
+            </dd>
+          </div>
+        </dl>
+
+        <div className="mt-auto flex items-center gap-3">
+          {/* Alíquota numa barra de 0 a 50%, com a marca do limite */}
+          <div className="relative flex-1" aria-hidden>
+            <div className="h-2 overflow-hidden rounded-full bg-muted">
+              <div
+                className={cn(
+                  "h-full rounded-full transition-[width] duration-500",
+                  critico
+                    ? "bg-destructive"
+                    : aliquota != null && aliquota > LIMITE_ATENCAO
+                      ? "bg-highlight"
+                      : "bg-success",
+                )}
+                style={{
+                  width: `${Math.min(100, ((aliquota ?? 0) / 0.5) * 100)}%`,
+                }}
+              />
+            </div>
+            <span
+              className="absolute -top-1 h-4 border-l border-dashed border-foreground/50"
+              style={{ left: `${(LIMITE_CUSTO_FIXO / 0.5) * 100}%` }}
+              title={`Limite de ${formatarPercentual(LIMITE_CUSTO_FIXO, 0)}`}
+            />
+          </div>
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={() => setAberto(true)}
             aria-haspopup="dialog"
+            className="shrink-0"
           >
             <ChartPie data-icon="inline-start" />
             Ver detalhes
           </Button>
         </div>
-      </div>
-
-      {critico && (
-        <Aviso tipo="erro">
-          Alíquota acima de {formatarPercentual(LIMITE_CUSTO_FIXO, 0)}: os
-          custos fixos estão pesando demais no faturamento. Considere reduzir
-          custos ou aumentar a receita para melhorar a margem de lucro.
-        </Aviso>
-      )}
+      </section>
 
       {aberto && (
         <ModalResumo

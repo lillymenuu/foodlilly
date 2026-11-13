@@ -13,10 +13,18 @@ import {
   InputUnidade,
   ModalSalvo,
 } from "@/components/formulario";
-import { useCamposNumericos, valoresIguais } from "@/components/formulario/use-campos-numericos";
+import {
+  useCamposNumericos,
+  valoresIguais,
+} from "@/components/formulario/use-campos-numericos";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { formatarMoeda, mascaraMoeda, paraNumero, paraTexto } from "@/lib/numero-br";
+import {
+  formatarMoeda,
+  mascaraMoeda,
+  paraNumero,
+  paraTexto,
+} from "@/lib/numero-br";
 
 import { salvarCusteio } from "./actions";
 import {
@@ -27,13 +35,18 @@ import {
   type CustoExtra,
   type ValoresCusteio,
 } from "./campos";
-import { ResumoFinanceiro, type GrupoResumo } from "./resumo-financeiro";
+import {
+  AvisoCustoFixo,
+  ResumoFinanceiro,
+  type GrupoResumo,
+} from "./resumo-financeiro";
 
 const FORM_ID = "form-custeio";
 
 type LinhaExtra = { id: string; descricao: string; valor: string };
 
-const soma = (valores: (number | null)[]) => valores.reduce<number>((s, v) => s + (v ?? 0), 0);
+const soma = (valores: (number | null)[]) =>
+  valores.reduce<number>((s, v) => s + (v ?? 0), 0);
 
 /** Linhas preenchidas da lista de extras, para comparar com o que foi salvo. */
 function extrasNormalizados(linhas: LinhaExtra[]): CustoExtra[] {
@@ -47,7 +60,9 @@ function extrasNormalizados(linhas: LinhaExtra[]): CustoExtra[] {
 
 const mesmosExtras = (a: CustoExtra[], b: CustoExtra[]) =>
   a.length === b.length &&
-  a.every((e, i) => e.descricao === b[i].descricao && Object.is(e.valor, b[i].valor));
+  a.every(
+    (e, i) => e.descricao === b[i].descricao && Object.is(e.valor, b[i].valor),
+  );
 
 export function FormCusteio({
   inicial,
@@ -61,7 +76,10 @@ export function FormCusteio({
   const form = useCamposNumericos(campos, inicial);
   const proximoId = useRef(extrasIniciais.length + 1);
   const [extras, setExtras] = useState<LinhaExtra[]>(() =>
-    (extrasIniciais.length ? extrasIniciais : [{ descricao: "", valor: null }]).map((e, i) => ({
+    (extrasIniciais.length
+      ? extrasIniciais
+      : [{ descricao: "", valor: null }]
+    ).map((e, i) => ({
       id: `extra-${i}`,
       descricao: e.descricao,
       valor: paraTexto(e.valor, 2),
@@ -89,21 +107,35 @@ export function FormCusteio({
   const detalhamento: GrupoResumo[] = grupos.map((g) => ({
     titulo: g.titulo,
     icone: g.icone,
-    itens: g.campos.map((c) => ({ rotulo: c.rotulo, valor: form.numeros[c.chave] ?? 0 })),
+    itens: g.campos.map((c) => ({
+      rotulo: c.rotulo,
+      valor: form.numeros[c.chave] ?? 0,
+    })),
   }));
   if (totalExtras > 0) {
     detalhamento.push({
       titulo: "Custos extras",
       icone: CirclePlus,
-      itens: extras.map((e) => ({ rotulo: e.descricao.trim() || "Sem descrição", valor: valorExtra(e) })),
+      itens: extras.map((e) => ({
+        rotulo: e.descricao.trim() || "Sem descrição",
+        valor: valorExtra(e),
+      })),
     });
   }
-  const totalCustos = soma(detalhamento.flatMap((g) => g.itens.map((i) => i.valor)));
+  const totalCustos = soma(
+    detalhamento.flatMap((g) => g.itens.map((i) => i.valor)),
+  );
   const receita = form.numeros.receitaBruta ?? 0;
 
-  function alterarExtra(id: string, campo: "descricao" | "valor", valor: string) {
+  function alterarExtra(
+    id: string,
+    campo: "descricao" | "valor",
+    valor: string,
+  ) {
     const texto = campo === "valor" ? mascaraMoeda(valor) : valor;
-    setExtras((linhas) => linhas.map((l) => (l.id === id ? { ...l, [campo]: texto } : l)));
+    setExtras((linhas) =>
+      linhas.map((l) => (l.id === id ? { ...l, [campo]: texto } : l)),
+    );
     form.limparErro(`${id}.${campo}`);
   }
 
@@ -111,7 +143,9 @@ export function FormCusteio({
     setExtras((linhas) =>
       linhas.map((l) => {
         const n = paraNumero(l.valor);
-        return l.id === id && n != null && !Number.isNaN(n) ? { ...l, valor: paraTexto(n, 2) } : l;
+        return l.id === id && n != null && !Number.isNaN(n)
+          ? { ...l, valor: paraTexto(n, 2) }
+          : l;
       }),
     );
   }
@@ -119,7 +153,9 @@ export function FormCusteio({
   function adicionarExtra() {
     const id = `extra-${proximoId.current++}`;
     setExtras((linhas) => [...linhas, { id, descricao: "", valor: "" }]);
-    requestAnimationFrame(() => document.getElementById(`${id}-descricao`)?.focus());
+    requestAnimationFrame(() =>
+      document.getElementById(`${id}-descricao`)?.focus(),
+    );
   }
 
   function removerExtra(id: string) {
@@ -141,7 +177,8 @@ export function FormCusteio({
       if (!descricao && valor == null) continue;
       if (!descricao) errosExtras[`${l.id}.descricao`] = "Informe a descrição.";
       if (valor == null) errosExtras[`${l.id}.valor`] = "Informe o valor.";
-      else if (Number.isNaN(valor)) errosExtras[`${l.id}.valor`] = "Valor inválido.";
+      else if (Number.isNaN(valor))
+        errosExtras[`${l.id}.valor`] = "Valor inválido.";
       if (descricao && valor != null && !Number.isNaN(valor)) {
         enviados.push({ id: l.id, extra: { descricao, valor } });
       }
@@ -184,16 +221,26 @@ export function FormCusteio({
 
   return (
     <form id={FORM_ID} onSubmit={salvar} noValidate className="contents">
-      <BannerFormulario
-        titulo="Custeio mensal"
-        descricao="Receita e custos fixos do mês. Eles definem quanto cada venda precisa cobrir."
-        icone={Receipt}
-        completos={completos}
-        total={campos.length}
-        formId={FORM_ID}
-        alterado={alterado}
-        salvando={salvando}
-      />
+      {/* Banner e resumo lado a lado em telas largas */}
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <BannerFormulario
+          titulo="Custeio mensal"
+          descricao="Receita e custos fixos do mês. Eles definem quanto cada venda precisa cobrir."
+          icone={Receipt}
+          completos={completos}
+          total={campos.length}
+          formId={FORM_ID}
+          alterado={alterado}
+          salvando={salvando}
+        />
+        <ResumoFinanceiro
+          receita={receita}
+          totalCustos={totalCustos}
+          grupos={detalhamento}
+        />
+      </div>
+
+      <AvisoCustoFixo receita={receita} totalCustos={totalCustos} />
 
       {(erroGeral || alterado) && (
         <Aviso tipo={erroGeral ? "erro" : "info"}>
@@ -204,8 +251,6 @@ export function FormCusteio({
         </Aviso>
       )}
 
-      <ResumoFinanceiro receita={receita} totalCustos={totalCustos} grupos={detalhamento} />
-
       <section className="rounded-2xl bg-card p-4 ring-1 ring-foreground/10 sm:p-5">
         <div className="mb-4 flex items-center gap-3">
           <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
@@ -213,7 +258,9 @@ export function FormCusteio({
           </span>
           <div>
             <h2 className="font-semibold">Receita bruta mensal</h2>
-            <p className="text-xs text-muted-foreground">Faturamento médio mensal da operação.</p>
+            <p className="text-xs text-muted-foreground">
+              Faturamento médio mensal da operação.
+            </p>
           </div>
         </div>
         <CampoNumero campo={campoReceita} {...campoProps(campoReceita.chave)} />
@@ -228,8 +275,12 @@ export function FormCusteio({
               titulo={grupo.titulo}
               icone={grupo.icone}
               total={grupo.campos.length}
-              completos={grupo.campos.filter((c) => form.preenchido(c.chave)).length}
-              detalhe={formatarMoeda(soma(grupo.campos.map((c) => form.numeros[c.chave])))}
+              completos={
+                grupo.campos.filter((c) => form.preenchido(c.chave)).length
+              }
+              detalhe={formatarMoeda(
+                soma(grupo.campos.map((c) => form.numeros[c.chave])),
+              )}
               className={cn(inteiro && "lg:col-span-2")}
             >
               <div
@@ -239,7 +290,11 @@ export function FormCusteio({
                 )}
               >
                 {grupo.campos.map((campo) => (
-                  <CampoNumero key={campo.chave} campo={campo} {...campoProps(campo.chave)} />
+                  <CampoNumero
+                    key={campo.chave}
+                    campo={campo}
+                    {...campoProps(campo.chave)}
+                  />
                 ))}
               </div>
             </CardGrupo>
@@ -258,7 +313,9 @@ export function FormCusteio({
               Outros custos fixos que não se encaixam nas categorias acima.
             </p>
           </div>
-          <span className="text-sm font-medium tabular-nums">{formatarMoeda(totalExtras)}</span>
+          <span className="text-sm font-medium tabular-nums">
+            {formatarMoeda(totalExtras)}
+          </span>
         </div>
 
         <div className="flex flex-col gap-3 p-4 sm:p-5">
@@ -270,7 +327,8 @@ export function FormCusteio({
                 key={linha.id}
                 className={cn(
                   "grid grid-cols-[1fr_auto] gap-2 rounded-xl border p-3 sm:grid-cols-[1fr_11rem_auto] sm:items-start",
-                  (erroDescricao || erroValor) && "border-destructive/60 bg-destructive/5",
+                  (erroDescricao || erroValor) &&
+                    "border-destructive/60 bg-destructive/5",
                 )}
               >
                 <div className="col-span-2 sm:col-span-1">
@@ -280,13 +338,19 @@ export function FormCusteio({
                   <Input
                     id={`${linha.id}-descricao`}
                     value={linha.descricao}
-                    onChange={(e) => alterarExtra(linha.id, "descricao", e.target.value)}
+                    onChange={(e) =>
+                      alterarExtra(linha.id, "descricao", e.target.value)
+                    }
                     placeholder="Ex.: Manutenção de equipamentos"
                     maxLength={80}
                     aria-invalid={Boolean(erroDescricao)}
                     className="h-10 scroll-mb-24 bg-muted/60"
                   />
-                  {erroDescricao && <p className="mt-1 text-xs text-destructive">{erroDescricao}</p>}
+                  {erroDescricao && (
+                    <p className="mt-1 text-xs text-destructive">
+                      {erroDescricao}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label htmlFor={`${linha.id}-valor`} className="sr-only">
@@ -298,11 +362,15 @@ export function FormCusteio({
                     inputMode="numeric"
                     placeholder="0,00"
                     value={linha.valor}
-                    onChange={(e) => alterarExtra(linha.id, "valor", e.target.value)}
+                    onChange={(e) =>
+                      alterarExtra(linha.id, "valor", e.target.value)
+                    }
                     onBlur={() => formatarExtra(linha.id)}
                     aria-invalid={Boolean(erroValor)}
                   />
-                  {erroValor && <p className="mt-1 text-xs text-destructive">{erroValor}</p>}
+                  {erroValor && (
+                    <p className="mt-1 text-xs text-destructive">{erroValor}</p>
+                  )}
                 </div>
                 <Button
                   type="button"
@@ -319,7 +387,13 @@ export function FormCusteio({
           })}
 
           {extras.length < MAX_EXTRAS && (
-            <Button type="button" variant="outline" size="lg" className="h-10 self-start" onClick={adicionarExtra}>
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className="h-10 self-start"
+              onClick={adicionarExtra}
+            >
               <Plus data-icon="inline-start" />
               Adicionar custo extra
             </Button>
@@ -327,7 +401,11 @@ export function FormCusteio({
         </div>
       </section>
 
-      <BarraSalvarCelular formId={FORM_ID} alterado={alterado} salvando={salvando} />
+      <BarraSalvarCelular
+        formId={FORM_ID}
+        alterado={alterado}
+        salvando={salvando}
+      />
       <ModalSalvo
         aberto={modalAberto}
         onAbertoChange={setModalAberto}
@@ -337,4 +415,3 @@ export function FormCusteio({
     </form>
   );
 }
-

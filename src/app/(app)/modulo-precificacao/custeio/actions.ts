@@ -7,9 +7,18 @@ import { z } from "zod";
 import { db } from "@/db";
 import { custeio, custosExtras } from "@/db/schema";
 import { garantirNegocioQuery, obterNegocioAtualId } from "@/lib/negocio-atual";
-import { errosPorCampo, esquemaNumeros, type ResultadoSalvar } from "@/lib/validacao";
+import {
+  errosPorCampo,
+  esquemaNumeros,
+  type ResultadoSalvar,
+} from "@/lib/validacao";
 
-import { campos, MAX_EXTRAS, type CustoExtra, type ValoresCusteio } from "./campos";
+import {
+  campos,
+  MAX_EXTRAS,
+  type CustoExtra,
+  type ValoresCusteio,
+} from "./campos";
 
 const esquema = z.object({
   fixos: esquemaNumeros(campos),
@@ -40,13 +49,20 @@ export async function salvarCusteio(
   if (!validado.success) {
     // Campos fixos voltam pela chave ("aluguel"); extras como "extras.0.valor".
     const erros = Object.fromEntries(
-      Object.entries(errosPorCampo(validado.error)).map(([k, v]) => [k.replace(/^fixos\./, ""), v]),
+      Object.entries(errosPorCampo(validado.error)).map(([k, v]) => [
+        k.replace(/^fixos\./, ""),
+        v,
+      ]),
     );
     return { ok: false, mensagem: "Confira os campos destacados.", erros };
   }
 
   const dados = { ...validado.data.fixos, atualizadoEm: new Date() };
-  const linhasExtras = validado.data.extras.map((e, ordem) => ({ negocioId, ...e, ordem }));
+  const linhasExtras = validado.data.extras.map((e, ordem) => ({
+    negocioId,
+    ...e,
+    ordem,
+  }));
 
   try {
     // Lote único (transação): os custos extras são substituídos pela lista atual.
@@ -57,7 +73,9 @@ export async function salvarCusteio(
         .values({ negocioId, ...dados })
         .onConflictDoUpdate({ target: custeio.negocioId, set: dados }),
       db.delete(custosExtras).where(eq(custosExtras.negocioId, negocioId)),
-      ...(linhasExtras.length ? [db.insert(custosExtras).values(linhasExtras)] : []),
+      ...(linhasExtras.length
+        ? [db.insert(custosExtras).values(linhasExtras)]
+        : []),
     ]);
   } catch (erro) {
     console.error("Erro ao salvar custeio", erro);
