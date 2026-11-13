@@ -37,7 +37,8 @@ import { plural } from "@/lib/texto";
 
 import { definirContaPadrao } from "./actions";
 import { CartaoConta, ModalConta, ModalExcluirConta } from "./modais";
-import type { Conta } from "./tipos";
+import { PainelCategorias } from "./categorias";
+import type { CategoriaFinanceira, Conta } from "./tipos";
 
 type Modal =
   | { tipo: "nova" }
@@ -46,7 +47,18 @@ type Modal =
   | { tipo: "boas-vindas" }
   | null;
 
-export function TelaContas({ contas }: { contas: Conta[] }) {
+export function TelaContas({
+  contas,
+  categorias,
+  abaInicial,
+}: {
+  contas: Conta[];
+  categorias: CategoriaFinanceira[];
+  abaInicial?: "categorias";
+}) {
+  const [aba, setAba] = useState<"contas" | "categorias">(
+    abaInicial && contas.length ? abaInicial : "contas",
+  );
   // Sem contas: abre o convite para configurar (como na primeira visita).
   const [modal, setModal] = useState<Modal>(
     contas.length ? null : { tipo: "boas-vindas" },
@@ -97,17 +109,24 @@ export function TelaContas({ contas }: { contas: Conta[] }) {
           className="relative grid gap-2 sm:grid-cols-3"
         >
           <Aba
-            ativa
+            ativa={aba === "contas"}
+            onClick={() => setAba("contas")}
             icone={Building2}
             titulo="Contas bancárias"
             detalhe={plural(contas.length, "conta", "contas")}
             passo={vazio ? 1 : undefined}
           />
           <Aba
+            ativa={aba === "categorias"}
+            onClick={() => setAba("categorias")}
             icone={Layers}
             titulo="Categorias"
-            detalhe={vazio ? "Cadastre uma conta primeiro" : "Em breve"}
-            bloqueada
+            detalhe={
+              vazio
+                ? "Cadastre uma conta primeiro"
+                : plural(categorias.length, "categoria", "categorias")
+            }
+            bloqueada={vazio}
           />
           <Aba
             icone={Users}
@@ -118,7 +137,9 @@ export function TelaContas({ contas }: { contas: Conta[] }) {
         </div>
       </section>
 
-      {vazio ? (
+      {aba === "categorias" && !vazio ? (
+        <PainelCategorias categorias={categorias} />
+      ) : vazio ? (
         <BoasVindas onNova={() => setModal({ tipo: "nova" })} />
       ) : (
         <section className="flex flex-col gap-4">
@@ -244,7 +265,9 @@ function Aba({
   ativa,
   bloqueada,
   passo,
+  onClick,
 }: {
+  onClick?: () => void;
   icone: LucideIcon;
   titulo: string;
   detalhe: string;
@@ -253,15 +276,19 @@ function Aba({
   passo?: number;
 }) {
   return (
-    <div
+    <button
+      type="button"
       role="tab"
       aria-selected={Boolean(ativa)}
-      aria-disabled={bloqueada || undefined}
+      disabled={bloqueada || !onClick}
+      onClick={onClick}
       className={cn(
-        "relative flex items-center justify-center gap-3 rounded-xl px-4 py-3 text-center transition-colors",
+        "relative flex items-center justify-center gap-3 rounded-xl px-4 py-3 text-center transition-colors focus-visible:ring-2 focus-visible:ring-highlight focus-visible:outline-none",
         ativa
           ? "bg-highlight text-highlight-foreground shadow-lg shadow-black/20"
-          : "bg-white/5 text-primary-foreground/50 ring-1 ring-white/10",
+          : bloqueada || !onClick
+            ? "bg-white/5 text-primary-foreground/50 ring-1 ring-white/10"
+            : "bg-white/10 text-primary-foreground ring-1 ring-white/15 hover:bg-white/15",
       )}
     >
       {passo && (
@@ -275,7 +302,7 @@ function Aba({
         <span className="block text-sm font-semibold">{titulo}</span>
         <span className="block text-xs opacity-80">{detalhe}</span>
       </span>
-    </div>
+    </button>
   );
 }
 

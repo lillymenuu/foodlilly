@@ -14,6 +14,7 @@ import {
   timestamp,
   uniqueIndex,
   uuid,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
 // ---------------------------------------------------------------- Acesso (Better Auth)
@@ -140,6 +141,10 @@ export const negocios = pgTable("negocios", {
   }),
   /** Idem para as categorias de insumo padrão. */
   categoriasInsumoPadraoEm: timestamp("categorias_insumo_padrao_em", {
+    withTimezone: true,
+  }),
+  /** Quando as categorias financeiras padrão foram criadas (null = ainda não). */
+  categoriasFinanceirasPadraoEm: timestamp("categorias_financeiras_padrao_em", {
     withTimezone: true,
   }),
   /** Relatórios: margem de lucro que o negócio quer atingir (%). */
@@ -538,5 +543,48 @@ export const contasBancarias = pgTable(
     uniqueIndex("contas_bancarias_padrao_unica")
       .on(t.negocioId)
       .where(sql`${t.padrao}`),
+  ],
+);
+
+export const GRUPOS_FINANCEIROS = [
+  "recebimentos",
+  "operacionais",
+  "variaveis",
+  "pessoas",
+  "impostos",
+  "aquisicoes",
+] as const;
+
+/**
+ * Financeiro > Categorias: principais (com `chave` do catálogo, sem pai) e subcategorias
+ * (com `paiId`, nome livre). Ver `modulo-financeiro/contas/catalogo-categorias.ts`.
+ */
+export const categoriasFinanceiras = pgTable(
+  "categorias_financeiras",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    negocioId: uuid("negocio_id")
+      .notNull()
+      .references(() => negocios.id, { onDelete: "cascade" }),
+    grupo: text({ enum: GRUPOS_FINANCEIROS }).notNull(),
+    nome: text().notNull(),
+    /** Chave do catálogo (só nas principais). */
+    chave: text(),
+    paiId: uuid("pai_id").references(
+      (): AnyPgColumn => categoriasFinanceiras.id,
+      { onDelete: "cascade" },
+    ),
+    criadoEm: timestamp("criado_em", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("categorias_financeiras_negocio_idx").on(t.negocioId),
+    uniqueIndex("categorias_financeiras_chave_unica")
+      .on(t.negocioId, t.chave)
+      .where(sql`${t.chave} is not null`),
+    uniqueIndex("categorias_financeiras_sub_unica")
+      .on(t.paiId, sql`lower(${t.nome})`)
+      .where(sql`${t.paiId} is not null`),
   ],
 );

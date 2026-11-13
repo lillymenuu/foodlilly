@@ -51,6 +51,15 @@ export type Conta = {
   cor: CorConta;
 };
 
+/** Categoria financeira: principal (com `chave`) ou subcategoria (com `paiId`). */
+export type CategoriaFinanceira = {
+  id: string;
+  grupo: import("./catalogo-categorias").GrupoFinanceiro;
+  nome: string;
+  chave: string | null;
+  paiId: string | null;
+};
+
 /** Dados enviados pelo formulário. */
 export type DadosConta = {
   nome: string;

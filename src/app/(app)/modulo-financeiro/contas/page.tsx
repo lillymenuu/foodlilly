@@ -8,22 +8,30 @@ import { db } from "@/db";
 import { contasBancarias } from "@/db/schema";
 import { obterNegocioAtualId } from "@/lib/negocio-atual";
 
+import { garantirCategoriasPadrao, listarCategorias } from "./dados-categorias";
 import { TelaContas } from "./tela-contas";
 import type { Conta } from "./tipos";
 
 export const metadata: Metadata = { title: "Contas e categorias · foodlilly" };
 
-export default function Page() {
+export default function Page({
+  searchParams,
+}: PageProps<"/modulo-financeiro/contas">) {
   return (
     <Suspense fallback={<Carregando />}>
-      <Conteudo />
+      <Conteudo searchParams={searchParams} />
     </Suspense>
   );
 }
 
-async function Conteudo() {
+async function Conteudo({
+  searchParams,
+}: {
+  searchParams: PageProps<"/modulo-financeiro/contas">["searchParams"];
+}) {
   await connection();
   const negocioId = await obterNegocioAtualId();
+  const { aba } = await searchParams;
   const linhas = await db
     .select()
     .from(contasBancarias)
@@ -42,7 +50,16 @@ async function Conteudo() {
   }));
   // Padrão primeiro.
   contas.sort((a, b) => Number(b.padrao) - Number(a.padrao));
-  return <TelaContas contas={contas} />;
+  // Categorias padrão (Vendas → Revendas) quando já existe conta.
+  if (contas.length) await garantirCategoriasPadrao(negocioId);
+  const categorias = contas.length ? await listarCategorias(negocioId) : [];
+  return (
+    <TelaContas
+      contas={contas}
+      categorias={categorias}
+      abaInicial={aba === "categorias" ? "categorias" : undefined}
+    />
+  );
 }
 
 function Carregando() {
