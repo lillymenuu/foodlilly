@@ -82,10 +82,10 @@ export function ModalResumo({
     <Dialog open onOpenChange={(aberto) => !aberto && onFechar()}>
       <DialogContent
         showCloseButton={false}
-        className="max-h-[calc(100dvh-2rem)] gap-0 overflow-y-auto bg-background p-0 sm:max-w-4xl"
+        className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden bg-background p-0 sm:max-w-4xl max-sm:inset-0 max-sm:h-dvh max-sm:max-h-dvh max-sm:w-full max-sm:max-w-full max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-none"
       >
         {/* Cabeçalho */}
-        <header className="relative overflow-hidden bg-gradient-to-br from-primary to-primary-strong px-5 pt-5 pb-6 text-primary-foreground sm:px-7">
+        <header className="relative shrink-0 overflow-hidden bg-gradient-to-br from-primary to-primary-strong px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-5 text-primary-foreground sm:px-7 sm:pt-5 sm:pb-6">
           <svg
             aria-hidden
             viewBox="0 0 200 100"
@@ -151,7 +151,7 @@ export function ModalResumo({
           </div>
         </header>
 
-        <div className="flex flex-col gap-4 p-4 sm:p-6">
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain p-4 sm:p-6">
           {/* Indicadores */}
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <Indicador
@@ -324,7 +324,7 @@ export function ModalResumo({
                     <span className="text-right font-semibold tabular-nums">
                       {formatarMoeda(it.valor)}
                       {receita > 0 && (
-                        <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                        <span className="ml-1.5 text-xs font-normal text-muted-foreground max-sm:hidden">
                           {pctTexto(it.valor / receita)} da receita
                         </span>
                       )}
@@ -356,7 +356,7 @@ export function ModalResumo({
           )}
         </div>
 
-        <footer className="sticky bottom-0 flex justify-end border-t bg-card/95 px-4 py-3 backdrop-blur sm:px-6">
+        <footer className="flex shrink-0 justify-end border-t bg-card px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6 sm:pb-3">
           <DialogClose render={<Button variant="outline" size="lg" />}>
             Fechar
           </DialogClose>
