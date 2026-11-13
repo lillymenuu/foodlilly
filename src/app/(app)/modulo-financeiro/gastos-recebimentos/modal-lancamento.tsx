@@ -1,13 +1,7 @@
 "use client";
 
 import { useId, useState, useTransition } from "react";
-import {
-  CalendarClock,
-  CreditCard,
-  LoaderCircle,
-  Repeat,
-  X,
-} from "lucide-react";
+import { CreditCard, LoaderCircle, Repeat, X } from "lucide-react";
 import { cn } from "cn";
 
 import { Aviso } from "@/components/formulario";
@@ -39,17 +33,31 @@ import {
 } from "../contas/catalogo-categorias";
 import type { CategoriaFinanceira } from "../contas/tipos";
 import { criarLancamento, editarLancamento } from "./actions";
+import { INTERVALOS, PainelRepeticao, type Parcela } from "./painel-repeticao";
 import {
   ehEntrada,
   FORMAS,
+  dataDaOcorrencia,
   LIMITES_LANCAMENTO,
+  MAXIMO_VEZES,
   type ContaOpcao,
+  type Intervalo,
   type FormaPagamento,
   type FornecedorOpcao,
   type Lancamento,
 } from "./tipos";
 
 const NOVA = "__nova";
+
+/** Nomes curtos para as abas do modal caberem numa linha. */
+const ROTULO_CURTO: Record<GrupoFinanceiro, string> = {
+  recebimentos: "Recebimentos",
+  operacionais: "Operacionais",
+  variaveis: "Variáveis",
+  pessoas: "Pessoas",
+  impostos: "Impostos",
+  aquisicoes: "Aquisições",
+};
 
 export function ModalLancamento({
   lancamento: l,
@@ -103,7 +111,10 @@ export function ModalLancamento({
   const [subNova, setSubNova] = useState("");
   const [pago, setPago] = useState(l?.pago ?? false);
   const [repeticao, setRepeticao] = useState<"" | "parcela" | "recorrente">("");
-  const [vezes, setVezes] = useState("2");
+  const [vezes, setVezes] = useState(2);
+  const [intervalo, setIntervalo] = useState<Intervalo>("mensal");
+  const [personalizar, setPersonalizar] = useState(false);
+  const [parcelas, setParcelas] = useState<Parcela[]>([]);
   const [erros, setErros] = useState<Record<string, string>>({});
   const [erroGeral, setErroGeral] = useState<string>();
   const [salvando, start] = useTransition();
@@ -126,8 +137,76 @@ export function ModalLancamento({
   ).filter(
     (s) => !subsSalvas.some((x) => normalizar(x.nome) === normalizar(s)),
   );
-  const valorNum = paraNumero(valor);
-  const nVezes = Number(vezes);
+  const personalizado = repeticao === "parcela" && personalizar;
+  // Com parcelas personalizadas, o total é a soma delas.
+  const somaParcelas = parcelas.reduce(
+    (s, p) => s + (paraNumero(p.valor) ?? 0),
+    0,
+  );
+  const valorNum = personalizado
+    ? Math.round(somaParcelas * 100) / 100
+    : paraNumero(valor);
+  const nVezes = vezes;
+  const maximo =
+    repeticao === "parcela"
+      ? MAXIMO_VEZES.parcela
+      : MAXIMO_VEZES.recorrente[intervalo];
+
+  /** Parcelas iguais (centavos de sobra na 1ª), nas datas do intervalo. */
+  function distribuir(
+    total: number | null,
+    n: number,
+    inicio: string,
+    iv: Intervalo,
+    anteriores: Parcela[] = [],
+  ): Parcela[] {
+    const centavos = Math.round((total ?? 0) * 100);
+    const base = Math.floor(centavos / n);
+    return Array.from({ length: n }, (_, i) => ({
+      valor: paraTexto((base + (i === 0 ? centavos - base * n : 0)) / 100, 2),
+      data: dataDaOcorrencia(inicio, iv, i),
+      pago: anteriores[i]?.pago ?? false,
+    }));
+  }
+
+  /** Muda a quantidade; com parcelas personalizadas, mantém as que já existem e completa as novas. */
+  function mudarVezes(n: number) {
+    const v = Math.max(2, Math.min(maximo, n));
+    setVezes(v);
+    if (personalizado) {
+      setParcelas((ps) =>
+        Array.from(
+          { length: v },
+          (_, i) =>
+            ps[i] ?? {
+              valor: "",
+              data: dataDaOcorrencia(data, intervalo, i),
+              pago: false,
+            },
+        ),
+      );
+    }
+  }
+
+  function mudarIntervalo(iv: Intervalo) {
+    setIntervalo(iv);
+    const max =
+      repeticao === "parcela"
+        ? MAXIMO_VEZES.parcela
+        : MAXIMO_VEZES.recorrente[iv];
+    if (vezes > max) setVezes(max);
+    if (personalizado)
+      setParcelas((ps) =>
+        ps.map((p, i) => ({ ...p, data: dataDaOcorrencia(data, iv, i) })),
+      );
+  }
+
+  function alternarPersonalizar() {
+    if (!personalizar)
+      setParcelas(distribuir(paraNumero(valor), vezes, data, intervalo));
+    else setValor(paraTexto(somaParcelas, 2));
+    setPersonalizar((p) => !p);
+  }
 
   const limpar = (k: string) =>
     setErros(({ [k]: _ignorado, ...resto }) => (void _ignorado, resto));
@@ -148,13 +227,15 @@ export function ModalLancamento({
     if (!principal) e.principalChave = "Escolha a categoria.";
     else if (!sub || (sub === NOVA && !subNova.trim()))
       e.subcategoria = "Escolha a subcategoria.";
-    if (
-      repeticao &&
-      (!Number.isInteger(nVezes) ||
-        nVezes < 2 ||
-        nVezes > LIMITES_LANCAMENTO.vezes)
-    )
-      e.vezes = `De 2 a ${LIMITES_LANCAMENTO.vezes}.`;
+    if (repeticao && (nVezes < 2 || nVezes > maximo))
+      e.vezes = `De 2 a ${maximo}.`;
+    if (personalizado) {
+      const ruim = parcelas.findIndex(
+        (p) => !((paraNumero(p.valor) ?? 0) > 0) || !p.data,
+      );
+      if (ruim >= 0)
+        e.parcelas = `Confira a parcela ${ruim + 1}: valor maior que zero e data.`;
+    }
     if (Object.keys(e).length) return setErros(e);
 
     const subEscolhida = sub.startsWith("sug:")
@@ -175,7 +256,20 @@ export function ModalLancamento({
       subcategoriaNome: subEscolhida.nome,
       pago,
       repeticao:
-        !l && repeticao ? { tipo: repeticao, vezes: nVezes } : undefined,
+        !l && repeticao
+          ? {
+              tipo: repeticao,
+              vezes: nVezes,
+              intervalo,
+              parcelas: personalizado
+                ? parcelas.map((p) => ({
+                    valor: paraNumero(p.valor)!,
+                    data: p.data,
+                    pago: p.pago,
+                  }))
+                : undefined,
+            }
+          : undefined,
     };
     start(async () => {
       const r = l
@@ -191,7 +285,7 @@ export function ModalLancamento({
               ? "Recebimento adicionado"
               : "Gasto adicionado",
           n
-            ? `${n} lançamentos criados (${repeticao === "parcela" ? "parcelas" : "repetições"} mensais).`
+            ? `${n} lançamentos criados (${repeticao === "parcela" ? "parcelas" : "repetições"} ${INTERVALOS.find((i) => i.valor === intervalo)!.rotulo.toLowerCase()}s).`
             : formatarMoeda(valorNum!),
           grupo,
         );
@@ -206,7 +300,7 @@ export function ModalLancamento({
     <Dialog open onOpenChange={(a) => !a && onFechar()}>
       <DialogContent
         showCloseButton={false}
-        className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl max-sm:inset-0 max-sm:h-dvh max-sm:max-h-dvh max-sm:w-full max-sm:max-w-full max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-none"
+        className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl max-sm:inset-0 max-sm:h-dvh max-sm:max-h-dvh max-sm:w-full max-sm:max-w-full max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-none"
       >
         {/* Cabeçalho na cor do grupo */}
         <header
@@ -239,37 +333,37 @@ export function ModalLancamento({
             <X className="size-4" />
           </DialogClose>
           {/* Tipo */}
+          {/* Tipo: grade compacta, todos visíveis sem rolar (3 por linha no celular, 6 no computador) */}
           <div
             role="tablist"
             aria-label="Tipo"
-            className="mt-4 -mb-1 flex gap-1.5 overflow-x-auto pb-1"
+            className="mt-4 grid grid-cols-3 gap-1.5 sm:grid-cols-6"
           >
-            {GRUPOS_FINANCEIROS.map((g) => (
-              <button
-                key={g}
-                type="button"
-                role="tab"
-                aria-selected={g === grupo}
-                onClick={() => trocarGrupo(g)}
-                className={cn(
-                  "flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition-colors",
-                  g === grupo
-                    ? "bg-white text-foreground shadow"
-                    : "bg-white/15 text-white hover:bg-white/25",
-                )}
-              >
-                {(() => {
-                  const I = GRUPOS[g].icone;
-                  return (
-                    <I
-                      className="size-3.5"
-                      style={g === grupo ? { color: GRUPOS[g].cor } : undefined}
-                    />
-                  );
-                })()}
-                {GRUPOS[g].rotulo}
-              </button>
-            ))}
+            {GRUPOS_FINANCEIROS.map((g) => {
+              const I = GRUPOS[g].icone;
+              return (
+                <button
+                  key={g}
+                  type="button"
+                  role="tab"
+                  aria-selected={g === grupo}
+                  title={GRUPOS[g].rotulo}
+                  onClick={() => trocarGrupo(g)}
+                  className={cn(
+                    "flex min-w-0 items-center justify-center gap-1 rounded-lg px-1.5 py-1.5 text-[11px] font-semibold transition-colors",
+                    g === grupo
+                      ? "bg-white text-foreground shadow"
+                      : "bg-white/15 text-white hover:bg-white/25",
+                  )}
+                >
+                  <I
+                    className="size-3.5 shrink-0"
+                    style={g === grupo ? { color: GRUPOS[g].cor } : undefined}
+                  />
+                  <span className="truncate">{ROTULO_CURTO[g]}</span>
+                </button>
+              );
+            })}
           </div>
         </header>
 
@@ -328,7 +422,14 @@ export function ModalLancamento({
                   prefixo="R$"
                   inputMode="numeric"
                   placeholder="0,00"
-                  value={valor}
+                  // Parcelas personalizadas: o total é a soma delas (só leitura).
+                  value={personalizado ? paraTexto(valorNum ?? 0, 2) : valor}
+                  readOnly={personalizado}
+                  title={
+                    personalizado
+                      ? "Soma das parcelas personalizadas"
+                      : undefined
+                  }
                   onChange={(e) => (
                     setValor(mascaraMoeda(e.target.value)),
                     limpar("valor")
@@ -520,7 +621,20 @@ export function ModalLancamento({
                     type="button"
                     role="switch"
                     aria-checked={repeticao === t}
-                    onClick={() => setRepeticao((r) => (r === t ? "" : t))}
+                    onClick={() => {
+                      const novo = repeticao === t ? "" : t;
+                      setRepeticao(novo);
+                      setPersonalizar(false);
+                      if (novo)
+                        setVezes((v) =>
+                          Math.min(
+                            v,
+                            novo === "parcela"
+                              ? MAXIMO_VEZES.parcela
+                              : MAXIMO_VEZES.recorrente[intervalo],
+                          ),
+                        );
+                    }}
                     className={cn(
                       "flex items-center gap-2.5 rounded-xl p-3 text-left ring-1 transition-colors",
                       repeticao === t
@@ -595,40 +709,30 @@ export function ModalLancamento({
             )}
 
             {repeticao && !l && (
-              <div className="flex flex-col gap-3 rounded-xl bg-primary-soft/50 p-4 sm:flex-row sm:items-end">
-                <Campo
-                  id="l-vezes"
-                  rotulo={
-                    repeticao === "parcela"
-                      ? "Número de parcelas"
-                      : "Repetir por quantos meses"
-                  }
-                  erro={erros.vezes}
-                >
-                  <Input
-                    id="l-vezes"
-                    type="number"
-                    inputMode="numeric"
-                    min={2}
-                    max={LIMITES_LANCAMENTO.vezes}
-                    value={vezes}
-                    onChange={(e) => (
-                      setVezes(e.target.value),
-                      limpar("vezes")
-                    )}
-                    className="h-10 w-32 bg-card"
-                  />
-                </Campo>
-                <p className="flex flex-1 items-start gap-2 text-sm text-muted-foreground">
-                  <CalendarClock className="mt-0.5 size-4 shrink-0 text-primary" />
-                  {valorNum && nVezes >= 2
-                    ? repeticao === "parcela"
-                      ? `${nVezes}x de ${formatarMoeda(valorNum / nVezes)}, uma por mês a partir de ${data.split("-").reverse().join("/")}.`
-                      : `${nVezes} lançamentos de ${formatarMoeda(valorNum)}, um por mês a partir de ${data.split("-").reverse().join("/")}.`
-                    : "Informe o valor para ver como fica."}
-                  {pago && " Só o primeiro fica marcado como pago."}
-                </p>
-              </div>
+              <PainelRepeticao
+                tipo={repeticao}
+                entrada={entrada}
+                data={data}
+                valor={valorNum}
+                vezes={vezes}
+                maximo={maximo}
+                intervalo={intervalo}
+                personalizar={personalizar}
+                parcelas={parcelas}
+                pago={pago}
+                erro={erros.vezes ?? erros.parcelas}
+                onVezes={(n) => (mudarVezes(n), limpar("vezes"))}
+                onIntervalo={mudarIntervalo}
+                onPersonalizar={alternarPersonalizar}
+                onParcelas={(ps) => (setParcelas(ps), limpar("parcelas"))}
+                onRedistribuir={() =>
+                  setParcelas((ps) =>
+                    distribuir(somaParcelas, vezes, data, intervalo, ps).map(
+                      (p, i) => ({ ...p, data: ps[i]?.data ?? p.data }),
+                    ),
+                  )
+                }
+              />
             )}
 
             {l?.serieTipo && (

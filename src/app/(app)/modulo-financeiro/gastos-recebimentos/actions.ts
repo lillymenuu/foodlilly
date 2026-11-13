@@ -20,7 +20,11 @@ import {
   LIMITES_CATEGORIA,
   principalPorChave,
 } from "../contas/catalogo-categorias";
-import { LIMITES_LANCAMENTO, somarMeses, type DadosLancamento } from "./tipos";
+import {
+  dataDaOcorrencia,
+  LIMITES_LANCAMENTO,
+  type DadosLancamento,
+} from "./tipos";
 
 const id = z.uuid();
 const esquema = z
@@ -61,6 +65,24 @@ const esquema = z
             LIMITES_LANCAMENTO.vezes,
             `Máximo de ${LIMITES_LANCAMENTO.vezes}.`,
           ),
+        intervalo: z.enum(["mensal", "quinzenal", "semanal"]).default("mensal"),
+        /** Parcelas personalizadas (valor, data e pago de cada uma). */
+        parcelas: z
+          .array(
+            z.object({
+              valor: z
+                .number()
+                .positive("Cada parcela precisa ter valor.")
+                .max(LIMITES_LANCAMENTO.valor),
+              data: z.iso.date(),
+              pago: z.boolean(),
+            }),
+          )
+          .optional(),
+      })
+      .refine((r) => !r.parcelas || r.parcelas.length === r.vezes, {
+        message: "Parcelas inválidas.",
+        path: ["parcelas"],
       })
       .optional(),
   })
@@ -240,15 +262,19 @@ export async function criarLancamento(
       // Parcelas dividem o total (a diferença dos centavos vai na primeira); recorrência repete o valor.
       const centavos = Math.round(v.data.valor * 100);
       const parcela = Math.floor(centavos / rep.vezes);
+      const personalizadas = rep.tipo === "parcela" ? rep.parcelas : undefined;
       linhas = Array.from({ length: rep.vezes }, (_, i) => ({
         ...r.colunas,
         negocioId,
-        data: somarMeses(v.data.data, i),
+        data:
+          personalizadas?.[i].data ??
+          dataDaOcorrencia(v.data.data, rep.intervalo, i),
         valor:
-          rep.tipo === "parcela"
+          personalizadas?.[i].valor ??
+          (rep.tipo === "parcela"
             ? (parcela + (i === 0 ? centavos - parcela * rep.vezes : 0)) / 100
-            : v.data.valor,
-        pago: i === 0 && v.data.pago,
+            : v.data.valor),
+        pago: personalizadas ? personalizadas[i].pago : i === 0 && v.data.pago,
         serieId,
         serieTipo: rep.tipo,
         serieNumero: i + 1,

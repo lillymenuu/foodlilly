@@ -54,7 +54,13 @@ export type DadosLancamento = {
   subcategoriaNome: string;
   pago: boolean;
   /** Só ao criar. */
-  repeticao?: { tipo: "parcela" | "recorrente"; vezes: number };
+  repeticao?: {
+    tipo: "parcela" | "recorrente";
+    vezes: number;
+    intervalo: Intervalo;
+    /** Parcelas personalizadas (só parcelamento). */
+    parcelas?: { valor: number; data: string; pago: boolean }[];
+  };
 };
 
 export const LIMITES_LANCAMENTO = {
@@ -82,3 +88,23 @@ export function somarMeses(data: string, meses: number) {
 }
 
 export const ehEntrada = (g: GrupoFinanceiro) => g === "recebimentos";
+
+export type Intervalo = "mensal" | "quinzenal" | "semanal";
+
+/** Data da ocorrência i (0 = a primeira): mensal mantém o dia; quinzenal soma 15 dias; semanal, 7. */
+export function dataDaOcorrencia(
+  inicio: string,
+  intervalo: Intervalo,
+  i: number,
+) {
+  if (intervalo === "mensal") return somarMeses(inicio, i);
+  const d = new Date(`${inicio}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + i * (intervalo === "quinzenal" ? 15 : 7));
+  return d.toISOString().slice(0, 10);
+}
+
+/** Máximo de ocorrências (recorrência: até 1 ano; parcelas: 48). */
+export const MAXIMO_VEZES = {
+  parcela: 48,
+  recorrente: { mensal: 12, quinzenal: 24, semanal: 52 },
+} as const;
