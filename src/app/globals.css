@@ -109,6 +109,15 @@
   --serie-3: #1baf7a;
   --serie-4: #eda100;
   --serie-5: #6250d6;
+  /* Cores dos cartões das contas bancárias (texto branco por cima: todas escuras o bastante). */
+  --cartao-grafite: #3f4b5b;
+  --cartao-azul: #1d4ed8;
+  --cartao-roxo: #7e22ce;
+  --cartao-verde: #047857;
+  --cartao-bronze: #a14d09;
+  --cartao-vinho: #be123c;
+  --cartao-petroleo: #0e7490;
+  --cartao-indigo: #4338ca;
 
   --radius: 0.75rem;
 
