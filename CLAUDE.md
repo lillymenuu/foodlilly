@@ -125,6 +125,7 @@ Pasta `src/app/(app)/modulo-precificacao/receitas/`. Rotas: central `/receitas`,
 - Em páginas com `params`, ler o parâmetro **dentro** do `<Suspense>` (passar a promise para o componente async).
 - **Estado preservado entre navegações:** com Cache Components o Next esconde a página (`<Activity>`) em vez de desmontar, e o `useState` continua. Formulários de "novo cadastro" devem se limpar num `useLayoutEffect` de limpeza (ver `editor-ficha.tsx`); modais também devem fechar ao esconder. Guia: `node_modules/next/dist/docs/01-app/02-guides/preserving-ui-state.md`.
 
+- Modal dentro de modal: o Base UI não desenha o fundo do modal aninhado; o `DialogOverlay` (`src/components/ui/dialog.tsx`) usa `forceRender` para desfocar e escurecer também o modal de trás.
 - Área do SuperAdmin: a criar (ex.: `src/app/(admin)/admin/`)
 - Funções de um arquivo `"use client"` não podem ser chamadas no servidor (ex.: `destinoSeguro` fica em `src/lib/destino.ts`).
 - **Banco**: PostgreSQL 18 no **Neon**, projeto `dblillyfood` (banco `neondb`), criado pela integração Vercel ↔ Neon e conectado ao projeto `foodlilly` na Vercel. Acesso pela variável `DATABASE_URL` (connection string *pooled*). A integração também cria `DATABASE_URL_UNPOOLED` (conexão direta, útil para migrations).
