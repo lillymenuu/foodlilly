@@ -74,18 +74,26 @@ export const CATEGORIAS_PADRAO: { nome: string; sistema?: boolean }[] = [
   { nome: "Outros" },
 ];
 
-const numero = (v: number, casas = 3) => v.toLocaleString("pt-BR", { maximumFractionDigits: casas });
+const numero = (v: number, casas = 3) =>
+  v.toLocaleString("pt-BR", { maximumFractionDigits: casas });
 
 /** "1.000 g", "9 unidades", "1 unidade" (curto: "9 un."). */
-export function formatarVolume(volume: number, unidade: Unidade, curto = false) {
+export function formatarVolume(
+  volume: number,
+  unidade: Unidade,
+  curto = false,
+) {
   if (unidade === "unidade") {
-    return curto ? `${numero(volume)} un.` : `${numero(volume)} ${volume === 1 ? "unidade" : "unidades"}`;
+    return curto
+      ? `${numero(volume)} un.`
+      : `${numero(volume)} ${volume === 1 ? "unidade" : "unidades"}`;
   }
   return `${numero(volume)} ${unidade}`;
 }
 
 /** Volume que sobra depois da perda. */
-export const volumeAproveitavel = (volume: number, perda: number) => volume * (1 - perda / 100);
+export const volumeAproveitavel = (volume: number, perda: number) =>
+  volume * (1 - perda / 100);
 
 /** Custo por unidade comprada (g, ml, cm...), sem e com a perda. */
 export function custosUnitarios(i: Pick<Insumo, "volume" | "custo" | "perda">) {
@@ -96,7 +104,12 @@ export function custosUnitarios(i: Pick<Insumo, "volume" | "custo" | "perda">) {
 }
 
 /** Preço real (com perda) na unidade de exibição: "Valor/kg", "Valor/unidade". */
-export function valorExibicao(i: Pick<Insumo, "volume" | "custo" | "perda" | "unidade">) {
+export function valorExibicao(
+  i: Pick<Insumo, "volume" | "custo" | "perda" | "unidade">,
+) {
   const { unidade, fator } = EXIBICAO[i.unidade];
-  return { rotulo: `Valor/${unidade === "unidade" ? "un." : unidade}`, valor: custosUnitarios(i).comPerda * fator };
+  return {
+    rotulo: `Valor/${unidade === "unidade" ? "un." : unidade}`,
+    valor: custosUnitarios(i).comPerda * fator,
+  };
 }

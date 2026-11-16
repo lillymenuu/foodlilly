@@ -5,7 +5,11 @@ import { connection } from "next/server";
 import { Skeleton } from "@/components/ui/skeleton";
 import { obterNegocioAtualId } from "@/lib/negocio-atual";
 
-import { garantirCategoriasPadrao, listarCategorias, listarInsumos } from "./dados";
+import {
+  garantirCategoriasPadrao,
+  listarCategorias,
+  listarInsumos,
+} from "./dados";
 import { TelaInsumos } from "./tela-insumos";
 
 export const metadata: Metadata = { title: "Insumos · foodlilly" };
@@ -22,7 +26,10 @@ async function Conteudo() {
   await connection(); // dados do negócio: sempre lidos na hora
   const negocioId = await obterNegocioAtualId();
   await garantirCategoriasPadrao(negocioId);
-  const [insumos, categorias] = await Promise.all([listarInsumos(negocioId), listarCategorias(negocioId)]);
+  const [insumos, categorias] = await Promise.all([
+    listarInsumos(negocioId),
+    listarCategorias(negocioId),
+  ]);
   return <TelaInsumos insumos={insumos} categorias={categorias} />;
 }
 

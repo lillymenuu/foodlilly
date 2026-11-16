@@ -21,6 +21,10 @@ import {
   campos as camposCusteio,
 } from "../custeio/campos";
 import { valoresPadrao as padraoDados } from "../dados-de-entrada/campos";
+import {
+  garantirCategoriasPadrao as garantirCategoriasInsumoPadrao,
+  listarCategorias as listarCategoriasInsumo,
+} from "../insumos/dados";
 import { custosUnitarios } from "../insumos/tipos";
 import {
   calcularTodas,
@@ -243,13 +247,21 @@ export async function montarEditor(
   fichaId?: string,
 ) {
   // Categorias de massa e recheio vêm juntas: a receita pode alternar entre os dois tipos.
-  const [{ contexto, fichas: lista, resultados }, massa, recheio, produto] =
-    await Promise.all([
-      carregarTudo(negocioId),
-      listarCategoriasFicha(negocioId, "massa"),
-      listarCategoriasFicha(negocioId, "recheio"),
-      listarCategoriasFicha(negocioId, "produto"),
-    ]);
+  // Categorias de insumo: para cadastrar um insumo novo sem sair da ficha.
+  await garantirCategoriasInsumoPadrao(negocioId);
+  const [
+    { contexto, fichas: lista, resultados },
+    massa,
+    recheio,
+    produto,
+    categoriasInsumo,
+  ] = await Promise.all([
+    carregarTudo(negocioId),
+    listarCategoriasFicha(negocioId, "massa"),
+    listarCategoriasFicha(negocioId, "recheio"),
+    listarCategoriasFicha(negocioId, "produto"),
+    listarCategoriasInsumo(negocioId),
+  ]);
   const categoriasPorTipo: Record<TipoFicha, CategoriaFicha[]> = {
     massa,
     recheio,
@@ -317,6 +329,7 @@ export async function montarEditor(
     parametros: contexto.parametros,
     fichasRef,
     categoriasPorTipo,
+    categoriasInsumo,
     usadoEm,
   };
 }

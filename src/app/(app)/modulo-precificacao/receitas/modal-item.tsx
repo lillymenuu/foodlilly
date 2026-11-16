@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Search } from "lucide-react";
+import { Check, CirclePlus, Search } from "lucide-react";
 import { cn } from "cn";
 
 import { CampoModal, ModalFormulario } from "@/components/cadastro";
@@ -9,6 +9,10 @@ import { InputUnidade } from "@/components/formulario";
 import { normalizar } from "@/lib/texto";
 import { paraNumero, paraTexto } from "@/lib/numero-br";
 
+import { notificar } from "@/components/notificacoes";
+
+import { ModalInsumo } from "../insumos/modais-insumo";
+import type { Categoria as CategoriaInsumo } from "../insumos/tipos";
 import type { TipoItem } from "./calculo";
 
 export type OpcaoItem = {
@@ -56,12 +60,15 @@ export const ROTULO_ITEM: Record<
 export function ModalItem({
   tipo,
   opcoes,
+  categoriasInsumo,
   atual,
   onFechar,
   onConfirmar,
 }: {
   tipo: TipoItem;
   opcoes: OpcaoItem[];
+  /** Para cadastrar um insumo novo sem sair da ficha (ingrediente e embalagem). */
+  categoriasInsumo?: CategoriaInsumo[];
   atual?: { refId: string; quantidade: number };
   onFechar: () => void;
   onConfirmar: (refId: string, quantidade: number) => void;
@@ -73,13 +80,21 @@ export function ModalItem({
     atual ? paraTexto(atual.quantidade) : "",
   );
   const [erros, setErros] = useState<Record<string, string>>({});
+  const [novoInsumo, setNovoInsumo] = useState(false);
+  // Insumo recém-criado: aparece na lista antes de a página atualizar.
+  const [criado, setCriado] = useState<OpcaoItem>();
+  const ehInsumo = tipo === "ingrediente" || tipo === "embalagem";
 
+  const todas =
+    criado && !opcoes.some((o) => o.id === criado.id)
+      ? [criado, ...opcoes]
+      : opcoes;
   const termo = normalizar(busca);
   const filtradas = termo
-    ? opcoes.filter((o) => normalizar(`${o.nome} ${o.grupo}`).includes(termo))
-    : opcoes;
+    ? todas.filter((o) => normalizar(`${o.nome} ${o.grupo}`).includes(termo))
+    : todas;
   const grupos = [...new Set(filtradas.map((o) => o.grupo))];
-  const escolhida = opcoes.find((o) => o.id === selecionado);
+  const escolhida = todas.find((o) => o.id === selecionado);
 
   function enviar() {
     const e: Record<string, string> = {};
@@ -190,6 +205,16 @@ export function ModalItem({
           {erros.item && (
             <p className="text-xs text-destructive">{erros.item}</p>
           )}
+          {ehInsumo && categoriasInsumo && (
+            <button
+              type="button"
+              onClick={() => setNovoInsumo(true)}
+              className="flex items-center justify-center gap-1.5 self-start rounded-lg px-1 py-1 text-sm font-medium text-highlight-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            >
+              <CirclePlus className="size-4 text-highlight-strong" />
+              Não encontrou? Cadastrar novo insumo
+            </button>
+          )}
         </div>
       )}
 
@@ -228,6 +253,33 @@ export function ModalItem({
           aria-invalid={Boolean(erros.quantidade)}
         />
       </CampoModal>
+      {novoInsumo && categoriasInsumo && (
+        <ModalInsumo
+          categorias={categoriasInsumo}
+          nomeInicial={busca.trim()}
+          categoriaInicial={
+            tipo === "embalagem"
+              ? categoriasInsumo.find((c) => c.sistema)?.id
+              : undefined
+          }
+          onFechar={() => setNovoInsumo(false)}
+          onConcluido={(titulo, descricao, novo) => {
+            setNovoInsumo(false);
+            notificar.sucesso(titulo, descricao);
+            if (novo) {
+              setCriado({
+                id: novo.id,
+                nome: novo.nome,
+                grupo: "Recém-cadastrado",
+                unidade: "",
+              });
+              setSelecionado(novo.id);
+              setBusca("");
+              setErros((x) => ({ ...x, item: "" }));
+            }
+          }}
+        />
+      )}
     </ModalFormulario>
   );
 }

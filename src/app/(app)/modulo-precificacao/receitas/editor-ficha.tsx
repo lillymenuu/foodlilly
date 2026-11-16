@@ -70,6 +70,7 @@ import {
   type TipoItem,
 } from "./calculo";
 import { ModalCategoriaFicha } from "./modais-categoria";
+import type { Categoria as CategoriaInsumo } from "../insumos/tipos";
 import { ModalItem, ROTULO_ITEM, type OpcaoItem } from "./modal-item";
 import { useEmModal } from "./modal-rota";
 import {
@@ -93,6 +94,8 @@ export type PropsEditor = {
   fichasRef: (ResumoRef & { id: string })[];
   /** Categorias por tipo (a receita pode alternar entre massa e recheio). */
   categoriasPorTipo: Record<TipoFicha, CategoriaFicha[]>;
+  /** Categorias de insumo (cadastro rápido de insumo pelo modal do item). */
+  categoriasInsumo: CategoriaInsumo[];
   /** Fichas que usam esta (produtos primeiro), com as gramas usadas. */
   usadoEm: {
     id: string;
@@ -1314,6 +1317,7 @@ export function EditorFicha(props: PropsEditor) {
         <ModalItem
           tipo={modal.item}
           opcoes={opcoesDe(modal.item)}
+          categoriasInsumo={props.categoriasInsumo}
           atual={modal.indice != null ? estado.itens[modal.indice] : undefined}
           onFechar={() => setModal(null)}
           onConfirmar={(refId, quantidade) =>

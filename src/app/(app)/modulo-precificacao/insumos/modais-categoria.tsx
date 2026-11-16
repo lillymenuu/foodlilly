@@ -2,7 +2,11 @@
 
 import { useState, useTransition } from "react";
 
-import { CampoModal, ModalExcluir, ModalFormulario } from "@/components/cadastro";
+import {
+  CampoModal,
+  ModalExcluir,
+  ModalFormulario,
+} from "@/components/cadastro";
 import { SelectNativo } from "@/components/cadastro/select-nativo";
 import { Input } from "@/components/ui/input";
 import { plural } from "@/lib/texto";
@@ -19,14 +23,21 @@ export function ModalCategoria({
   categoria?: Categoria;
   onFechar: () => void;
   /** `criada` vem preenchida ao criar, para já selecionar a nova categoria. */
-  onConcluido: (titulo: string, descricao: string, criada?: { id: string; nome: string }) => void;
+  onConcluido: (
+    titulo: string,
+    descricao: string,
+    criada?: { id: string; nome: string },
+  ) => void;
 }) {
   const [nome, setNome] = useState(categoria?.nome ?? "");
   const [erro, setErro] = useState<string>();
   const [erroGeral, setErroGeral] = useState<string>();
   const [salvando, startTransition] = useTransition();
 
-  function mostrarErro(r: { mensagem: string; erros?: Record<string, string> }) {
+  function mostrarErro(r: {
+    mensagem: string;
+    erros?: Record<string, string>;
+  }) {
     if (r.erros?.nome) setErro(r.erros.nome);
     else setErroGeral(r.mensagem);
   }
@@ -55,7 +66,11 @@ export function ModalCategoria({
       editando={Boolean(categoria)}
       item="categoria"
       genero="f"
-      subtitulo={categoria ? "Renomear atualiza todos os insumos desta categoria." : undefined}
+      subtitulo={
+        categoria
+          ? "Renomear atualiza todos os insumos desta categoria."
+          : undefined
+      }
       descricaoNovo="Crie uma categoria para organizar seus insumos."
       salvando={salvando}
       erroGeral={erroGeral}
@@ -111,9 +126,16 @@ export function ModalExcluirCategoria({
           ? "Os insumos precisam ficar em alguma categoria. Escolha o destino antes de excluir."
           : "Nenhum insumo usa esta categoria."
       }
-      detalhes={[{ rotulo: "Insumos", valor: plural(categoria.insumos, "insumo", "insumos") }]}
+      detalhes={[
+        {
+          rotulo: "Insumos",
+          valor: plural(categoria.insumos, "insumo", "insumos"),
+        },
+      ]}
       desabilitado={temInsumos && !destino}
-      excluir={() => excluirCategoria(categoria.id, temInsumos ? destino : undefined)}
+      excluir={() =>
+        excluirCategoria(categoria.id, temInsumos ? destino : undefined)
+      }
       onFechar={onFechar}
       onConcluido={onConcluido}
     >
@@ -123,7 +145,11 @@ export function ModalExcluirCategoria({
           rotulo="Mover insumos para"
           descricao={`${plural(categoria.insumos, "insumo será movido", "insumos serão movidos")} para a categoria escolhida.`}
         >
-          <SelectNativo id="categoria-destino" value={destino} onChange={(e) => setDestino(e.target.value)}>
+          <SelectNativo
+            id="categoria-destino"
+            value={destino}
+            onChange={(e) => setDestino(e.target.value)}
+          >
             {outras.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.nome}

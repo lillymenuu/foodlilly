@@ -1,17 +1,39 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Lightbulb, LoaderCircle, Plus, ScanBarcode, Search } from "lucide-react";
+import {
+  Lightbulb,
+  LoaderCircle,
+  Plus,
+  ScanBarcode,
+  Search,
+} from "lucide-react";
 
-import { CampoModal, ModalExcluir, ModalFormulario, semErro } from "@/components/cadastro";
+import {
+  CampoModal,
+  ModalExcluir,
+  ModalFormulario,
+  semErro,
+} from "@/components/cadastro";
 import { SelectNativo } from "@/components/cadastro/select-nativo";
 import { InputUnidade } from "@/components/formulario";
 import { notificar } from "@/components/notificacoes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { formatarMoeda, formatarPercentual, mascaraMoeda, paraNumero, paraTexto } from "@/lib/numero-br";
+import {
+  formatarMoeda,
+  formatarPercentual,
+  mascaraMoeda,
+  paraNumero,
+  paraTexto,
+} from "@/lib/numero-br";
 
-import { buscarCodigoBarras, criarInsumo, editarInsumo, excluirInsumo } from "./actions";
+import {
+  buscarCodigoBarras,
+  criarInsumo,
+  editarInsumo,
+  excluirInsumo,
+} from "./actions";
 import { LeitorCodigo, leitorDisponivel } from "./leitor-codigo";
 import { ModalCategoria } from "./modais-categoria";
 import {
@@ -32,21 +54,35 @@ const custoUnitario = (v: number, unidade: Unidade) =>
 export function ModalInsumo({
   insumo,
   categorias,
+  nomeInicial,
+  categoriaInicial,
   onFechar,
   onConcluido,
 }: {
   insumo?: Insumo;
   categorias: Categoria[];
+  /** Cadastro novo: nome e categoria já preenchidos (ex.: aberto da ficha técnica). */
+  nomeInicial?: string;
+  categoriaInicial?: string;
   onFechar: () => void;
-  onConcluido: (titulo: string, descricao: string) => void;
+  /** `criado`: id e nome do insumo novo (só ao cadastrar). */
+  onConcluido: (
+    titulo: string,
+    descricao: string,
+    criado?: { id: string; nome: string },
+  ) => void;
 }) {
   const [codigo, setCodigo] = useState(insumo?.codigoBarras ?? "");
-  const [nome, setNome] = useState(insumo?.nome ?? "");
-  const [categoriaId, setCategoriaId] = useState(insumo?.categoriaId ?? "");
+  const [nome, setNome] = useState(insumo?.nome ?? nomeInicial ?? "");
+  const [categoriaId, setCategoriaId] = useState(
+    insumo?.categoriaId ?? categoriaInicial ?? "",
+  );
   const [volume, setVolume] = useState(paraTexto(insumo?.volume));
   const [unidade, setUnidade] = useState<Unidade | "">(insumo?.unidade ?? "");
   const [custo, setCusto] = useState(paraTexto(insumo?.custo, 2));
-  const [perda, setPerda] = useState(insumo?.perda ? paraTexto(insumo.perda) : "");
+  const [perda, setPerda] = useState(
+    insumo?.perda ? paraTexto(insumo.perda) : "",
+  );
   const [erros, setErros] = useState<Record<string, string>>({});
   const [erroGeral, setErroGeral] = useState<string>();
   const [salvando, startTransition] = useTransition();
@@ -56,9 +92,10 @@ export function ModalInsumo({
   // Categorias criadas aqui aparecem antes de a lista da página atualizar.
   const [criadas, setCriadas] = useState<Categoria[]>([]);
 
-  const opcoesCategoria = [...categorias, ...criadas.filter((c) => !categorias.some((x) => x.id === c.id))].sort(
-    (a, b) => a.nome.localeCompare(b.nome, "pt-BR"),
-  );
+  const opcoesCategoria = [
+    ...categorias,
+    ...criadas.filter((c) => !categorias.some((x) => x.id === c.id)),
+  ].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
 
   const alterar = (campo: string, set: (v: string) => void) => (v: string) => {
     set(v);
@@ -68,7 +105,10 @@ export function ModalInsumo({
   function buscar(valor = codigo) {
     const limpo = valor.replace(/\D/g, "");
     if (!/^\d{8,14}$/.test(limpo)) {
-      setErros((e) => ({ ...e, codigoBarras: "Digite um código de 8 a 14 números." }));
+      setErros((e) => ({
+        ...e,
+        codigoBarras: "Digite um código de 8 a 14 números.",
+      }));
       return;
     }
     startBusca(async () => {
@@ -80,8 +120,13 @@ export function ModalInsumo({
       setNome(r.produto.nome);
       if (r.produto.volume) setVolume(paraTexto(r.produto.volume));
       if (r.produto.unidade) setUnidade(r.produto.unidade);
-      setErros((e) => semErro("nome")(semErro("volume")(semErro("unidade")(e))));
-      notificar.sucesso("Produto encontrado", "Confira os dados e informe o custo.");
+      setErros((e) =>
+        semErro("nome")(semErro("volume")(semErro("unidade")(e))),
+      );
+      notificar.sucesso(
+        "Produto encontrado",
+        "Confira os dados e informe o custo.",
+      );
     });
   }
 
@@ -101,15 +146,26 @@ export function ModalInsumo({
   const nCusto = paraNumero(custo);
   const nPerda = paraNumero(perda) ?? 0;
   const previa =
-    unidade && nVolume && nCusto && !Number.isNaN(nVolume) && !Number.isNaN(nCusto) && !Number.isNaN(nPerda) && nPerda < 100
+    unidade &&
+    nVolume &&
+    nCusto &&
+    !Number.isNaN(nVolume) &&
+    !Number.isNaN(nCusto) &&
+    !Number.isNaN(nPerda) &&
+    nPerda < 100
       ? (() => {
-          const custos = custosUnitarios({ volume: nVolume, custo: nCusto, perda: nPerda });
+          const custos = custosUnitarios({
+            volume: nVolume,
+            custo: nCusto,
+            perda: nPerda,
+          });
           return {
             unidade,
             aproveitavel: volumeAproveitavel(nVolume, nPerda),
             ...custos,
             // Quanto o custo real ficou acima do custo sem perda (10% de perda = +11,1%).
-            aumento: custos.semPerda > 0 ? custos.comPerda / custos.semPerda - 1 : 0,
+            aumento:
+              custos.semPerda > 0 ? custos.comPerda / custos.semPerda - 1 : 0,
           };
         })()
       : null;
@@ -117,10 +173,12 @@ export function ModalInsumo({
   function enviar() {
     const e: Record<string, string> = {};
     const codigoLimpo = codigo.replace(/\D/g, "");
-    if (codigoLimpo && !/^\d{8,14}$/.test(codigoLimpo)) e.codigoBarras = "O código deve ter de 8 a 14 números.";
+    if (codigoLimpo && !/^\d{8,14}$/.test(codigoLimpo))
+      e.codigoBarras = "O código deve ter de 8 a 14 números.";
     if (!nome.trim()) e.nome = "Informe o nome do insumo.";
     if (!categoriaId) e.categoriaId = "Escolha uma categoria.";
-    if (nVolume == null || Number.isNaN(nVolume) || nVolume <= 0) e.volume = "Informe o volume.";
+    if (nVolume == null || Number.isNaN(nVolume) || nVolume <= 0)
+      e.volume = "Informe o volume.";
     if (!unidade) e.unidade = "Escolha a unidade.";
     if (!nCusto) e.custo = "Informe o custo.";
     if (Number.isNaN(nPerda)) e.perda = "Informe um número.";
@@ -139,8 +197,15 @@ export function ModalInsumo({
       perda: nPerda,
     };
     startTransition(async () => {
-      const r = insumo ? await editarInsumo(insumo.id, dados) : await criarInsumo(dados);
-      if (r.ok) onConcluido(insumo ? "Insumo atualizado" : "Insumo adicionado", dados.nome);
+      const criado = insumo ? null : await criarInsumo(dados);
+      const r = criado ?? (await editarInsumo(insumo!.id, dados));
+      const idCriado = criado?.ok ? criado.id : undefined;
+      if (r.ok)
+        onConcluido(
+          insumo ? "Insumo atualizado" : "Insumo adicionado",
+          dados.nome,
+          !insumo && idCriado ? { id: idCriado, nome: dados.nome } : undefined,
+        );
       else {
         setErros(r.erros ?? {});
         setErroGeral(r.mensagem);
@@ -171,7 +236,12 @@ export function ModalInsumo({
             <Input
               id="insumo-codigo"
               value={codigo}
-              onChange={(e) => alterar("codigoBarras", setCodigo)(e.target.value.replace(/[^\d]/g, ""))}
+              onChange={(e) =>
+                alterar(
+                  "codigoBarras",
+                  setCodigo,
+                )(e.target.value.replace(/[^\d]/g, ""))
+              }
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
@@ -195,9 +265,19 @@ export function ModalInsumo({
               aria-label="Buscar produto pelo código"
               title="Buscar produto"
             >
-              {buscando ? <LoaderCircle className="animate-spin" /> : <Search />}
+              {buscando ? (
+                <LoaderCircle className="animate-spin" />
+              ) : (
+                <Search />
+              )}
             </Button>
-            <Button type="button" variant="highlight" size="lg" className="h-10" onClick={iniciarLeitura}>
+            <Button
+              type="button"
+              variant="highlight"
+              size="lg"
+              className="h-10"
+              onClick={iniciarLeitura}
+            >
               <ScanBarcode data-icon="inline-start" />
               Ler
             </Button>
@@ -214,7 +294,11 @@ export function ModalInsumo({
           )}
         </CampoModal>
 
-        <CampoModal id="insumo-nome" rotulo="Nome do insumo *" erro={erros.nome}>
+        <CampoModal
+          id="insumo-nome"
+          rotulo="Nome do insumo *"
+          erro={erros.nome}
+        >
           <Input
             id="insumo-nome"
             value={nome}
@@ -244,7 +328,9 @@ export function ModalInsumo({
           <SelectNativo
             id="insumo-categoria"
             value={categoriaId}
-            onChange={(e) => alterar("categoriaId", setCategoriaId)(e.target.value)}
+            onChange={(e) =>
+              alterar("categoriaId", setCategoriaId)(e.target.value)
+            }
             aria-invalid={Boolean(erros.categoriaId)}
           >
             <option value="" disabled>
@@ -256,11 +342,17 @@ export function ModalInsumo({
               </option>
             ))}
           </SelectNativo>
-          {erros.categoriaId && <p className="text-xs text-destructive">{erros.categoriaId}</p>}
+          {erros.categoriaId && (
+            <p className="text-xs text-destructive">{erros.categoriaId}</p>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <CampoModal id="insumo-volume" rotulo="Volume bruto *" erro={erros.volume}>
+          <CampoModal
+            id="insumo-volume"
+            rotulo="Volume bruto *"
+            erro={erros.volume}
+          >
             <Input
               id="insumo-volume"
               value={volume}
@@ -272,11 +364,19 @@ export function ModalInsumo({
               className="h-10 bg-muted/60 tabular-nums"
             />
           </CampoModal>
-          <CampoModal id="insumo-unidade" rotulo="Unidade *" erro={erros.unidade}>
+          <CampoModal
+            id="insumo-unidade"
+            rotulo="Unidade *"
+            erro={erros.unidade}
+          >
             <SelectNativo
               id="insumo-unidade"
               value={unidade}
-              onChange={(e) => alterar("unidade", (v) => setUnidade(v as Unidade))(e.target.value)}
+              onChange={(e) =>
+                alterar("unidade", (v) => setUnidade(v as Unidade))(
+                  e.target.value,
+                )
+              }
               aria-invalid={Boolean(erros.unidade)}
             >
               <option value="" disabled>
@@ -302,7 +402,9 @@ export function ModalInsumo({
             prefixo="R$"
             inputMode="numeric"
             value={custo}
-            onChange={(e) => alterar("custo", setCusto)(mascaraMoeda(e.target.value))}
+            onChange={(e) =>
+              alterar("custo", setCusto)(mascaraMoeda(e.target.value))
+            }
             placeholder="0,00"
             aria-invalid={Boolean(erros.custo)}
           />
@@ -334,23 +436,31 @@ export function ModalInsumo({
             <dl className="flex flex-col gap-1.5">
               <div className="flex justify-between gap-4">
                 <dt className="text-muted-foreground">Volume aproveitável</dt>
-                <dd className="font-medium tabular-nums">{formatarVolume(previa.aproveitavel, previa.unidade)}</dd>
+                <dd className="font-medium tabular-nums">
+                  {formatarVolume(previa.aproveitavel, previa.unidade)}
+                </dd>
               </div>
               <div className="flex justify-between gap-4">
                 <dt className="text-muted-foreground">Custo sem perda</dt>
-                <dd className={`tabular-nums ${nPerda > 0 ? "text-muted-foreground line-through" : "font-medium"}`}>
+                <dd
+                  className={`tabular-nums ${nPerda > 0 ? "text-muted-foreground line-through" : "font-medium"}`}
+                >
                   {custoUnitario(previa.semPerda, previa.unidade)}
                 </dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-muted-foreground">Custo real (com perda)</dt>
+                <dt className="text-muted-foreground">
+                  Custo real (com perda)
+                </dt>
                 <dd className="font-semibold text-success tabular-nums">
                   {custoUnitario(previa.comPerda, previa.unidade)}
                 </dd>
               </div>
               <div className="mt-1 flex justify-between gap-4 border-t border-primary/15 pt-2">
                 <dt className="text-muted-foreground">Aumento no custo</dt>
-                <dd className={`font-semibold tabular-nums ${previa.aumento > 0 ? "text-amber-700" : "text-muted-foreground"}`}>
+                <dd
+                  className={`font-semibold tabular-nums ${previa.aumento > 0 ? "text-amber-700" : "text-muted-foreground"}`}
+                >
                   {formatarPercentual(previa.aumento, 1, true)}
                 </dd>
               </div>
@@ -366,7 +476,10 @@ export function ModalInsumo({
             setNovaCategoria(false);
             notificar.sucesso(titulo, descricao);
             if (criada) {
-              setCriadas((c) => [...c, { ...criada, sistema: false, insumos: 0 }]);
+              setCriadas((c) => [
+                ...c,
+                { ...criada, sistema: false, insumos: 0 },
+              ]);
               setCategoriaId(criada.id);
               setErros(semErro("categoriaId"));
             }
@@ -395,7 +508,10 @@ export function ModalExcluirInsumo({
       consequencia="Esta ação é irreversível e o insumo será removido permanentemente."
       detalhes={[
         { rotulo: "Categoria", valor: categoria ?? "—" },
-        { rotulo: "Volume", valor: formatarVolume(insumo.volume, insumo.unidade) },
+        {
+          rotulo: "Volume",
+          valor: formatarVolume(insumo.volume, insumo.unidade),
+        },
         { rotulo: "Custo médio", valor: formatarMoeda(insumo.custo) },
       ]}
       excluir={() => excluirInsumo(insumo.id)}

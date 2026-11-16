@@ -6,10 +6,13 @@ import { ScanBarcode, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 /** API do navegador para ler códigos (Chrome/Edge/Android). Não existe no Safari. */
-type Detector = { detect: (fonte: HTMLVideoElement) => Promise<{ rawValue: string }[]> };
+type Detector = {
+  detect: (fonte: HTMLVideoElement) => Promise<{ rawValue: string }[]>;
+};
 type ConstrutorDetector = new (opcoes: { formats: string[] }) => Detector;
 
-export const leitorDisponivel = () => typeof window !== "undefined" && "BarcodeDetector" in window;
+export const leitorDisponivel = () =>
+  typeof window !== "undefined" && "BarcodeDetector" in window;
 
 /** Mostra a câmera traseira e devolve o primeiro código de barras lido. */
 export function LeitorCodigo({
@@ -42,8 +45,12 @@ export function LeitorCodigo({
         video.current.srcObject = stream;
         await video.current.play();
 
-        const BarcodeDetector = (window as unknown as { BarcodeDetector: ConstrutorDetector }).BarcodeDetector;
-        const detector = new BarcodeDetector({ formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128"] });
+        const BarcodeDetector = (
+          window as unknown as { BarcodeDetector: ConstrutorDetector }
+        ).BarcodeDetector;
+        const detector = new BarcodeDetector({
+          formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128"],
+        });
 
         const procurar = async () => {
           if (!ativo || !video.current) return;
@@ -60,7 +67,10 @@ export function LeitorCodigo({
         };
         procurar();
       } catch {
-        if (ativo) setErro("Não foi possível abrir a câmera. Verifique a permissão ou digite o código.");
+        if (ativo)
+          setErro(
+            "Não foi possível abrir a câmera. Verifique a permissão ou digite o código.",
+          );
       }
     }
     iniciar();
@@ -78,7 +88,12 @@ export function LeitorCodigo({
         <p className="text-sm text-destructive">{erro}</p>
       ) : (
         <div className="relative overflow-hidden rounded-lg bg-black">
-          <video ref={video} muted playsInline className="aspect-video w-full object-cover" />
+          <video
+            ref={video}
+            muted
+            playsInline
+            className="aspect-video w-full object-cover"
+          />
           <div className="pointer-events-none absolute inset-x-8 top-1/2 h-0.5 -translate-y-1/2 bg-highlight shadow-[0_0_12px] shadow-highlight" />
         </div>
       )}
@@ -87,7 +102,12 @@ export function LeitorCodigo({
           <ScanBarcode className="size-4" />
           Aponte a câmera para o código de barras.
         </p>
-        <Button type="button" variant="ghost" size="sm" onClick={() => callbacks.current.onFechar()}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => callbacks.current.onFechar()}
+        >
           <X data-icon="inline-start" />
           Fechar
         </Button>

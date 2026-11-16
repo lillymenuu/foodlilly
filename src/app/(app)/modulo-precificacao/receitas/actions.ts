@@ -325,15 +325,13 @@ export async function duplicarFicha(
       }),
       ...(itens.length
         ? [
-            db
-              .insert(fichaItens)
-              .values(
-                itens.map((i) => ({
-                  ...i,
-                  id: crypto.randomUUID(),
-                  fichaId: novoId,
-                })),
-              ),
+            db.insert(fichaItens).values(
+              itens.map((i) => ({
+                ...i,
+                id: crypto.randomUUID(),
+                fichaId: novoId,
+              })),
+            ),
           ]
         : []),
     ]);

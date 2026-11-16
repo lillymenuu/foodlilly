@@ -258,13 +258,15 @@ async function validarInsumo(negocioId: string, dados: DadosInsumo) {
   return { dados: validado.data };
 }
 
+/** Cria o insumo e devolve o id (para quem abriu o cadastro já selecioná-lo, ex.: ficha técnica). */
 export async function criarInsumo(
   dados: DadosInsumo,
-): Promise<ResultadoSalvar> {
+): Promise<ResultadoSalvar & { id?: string }> {
   const negocioId = await obterNegocioAtualId();
   const { erro, dados: validos } = await validarInsumo(negocioId, dados);
   if (erro) return erro;
 
+  let criadoId: string | undefined;
   try {
     const [{ total }] = await db
       .select({ total: count() })
@@ -276,13 +278,17 @@ export async function criarInsumo(
         mensagem: `Limite de ${LIMITES.insumosPorNegocio} insumos atingido.`,
       };
     }
-    await db.insert(insumos).values({ negocioId, ...validos! });
+    const [novo] = await db
+      .insert(insumos)
+      .values({ negocioId, ...validos! })
+      .returning({ id: insumos.id });
+    criadoId = novo.id;
   } catch (e) {
     console.error("Erro ao criar insumo", e);
     return FALHA;
   }
   refresh();
-  return { ok: true };
+  return { ok: true, id: criadoId };
 }
 
 export async function editarInsumo(

@@ -4,7 +4,11 @@ import { useState } from "react";
 import { Lock, Package, Pencil, Plus, Tag, Tags, Trash } from "lucide-react";
 import { cn } from "cn";
 
-import { BannerCadastro, CabecalhoLista, VazioCadastro } from "@/components/cadastro";
+import {
+  BannerCadastro,
+  CabecalhoLista,
+  VazioCadastro,
+} from "@/components/cadastro";
 import { notificar } from "@/components/notificacoes";
 import { Button } from "@/components/ui/button";
 import { formatarMoeda, formatarMoedaPrecisa } from "@/lib/numero-br";
@@ -12,7 +16,12 @@ import { compararNome, normalizar, plural } from "@/lib/texto";
 
 import { ModalCategoria, ModalExcluirCategoria } from "./modais-categoria";
 import { ModalExcluirInsumo, ModalInsumo } from "./modais-insumo";
-import { formatarVolume, valorExibicao, type Categoria, type Insumo } from "./tipos";
+import {
+  formatarVolume,
+  valorExibicao,
+  type Categoria,
+  type Insumo,
+} from "./tipos";
 
 const ordens = {
   recentes: "Mais recentes",
@@ -34,7 +43,13 @@ type Modal =
   | { tipo: "excluir-categoria"; categoria: Categoria }
   | null;
 
-export function TelaInsumos({ insumos, categorias }: { insumos: Insumo[]; categorias: Categoria[] }) {
+export function TelaInsumos({
+  insumos,
+  categorias,
+}: {
+  insumos: Insumo[];
+  categorias: Categoria[];
+}) {
   const [aba, setAba] = useState<Aba>("insumos");
   const [busca, setBusca] = useState("");
   const [ordem, setOrdem] = useState<Ordem>("recentes");
@@ -48,7 +63,11 @@ export function TelaInsumos({ insumos, categorias }: { insumos: Insumo[]; catego
   const termo = normalizar(busca);
   const filtrados = termo
     ? insumos.filter((i) =>
-        [i.nome, nomeCategoria.get(i.categoriaId) ?? "", i.codigoBarras ?? ""].some((t) => normalizar(t).includes(termo)),
+        [
+          i.nome,
+          nomeCategoria.get(i.categoriaId) ?? "",
+          i.codigoBarras ?? "",
+        ].some((t) => normalizar(t).includes(termo)),
       )
     : insumos;
   const visiveis = [...filtrados].sort((a, b) => {
@@ -64,7 +83,12 @@ export function TelaInsumos({ insumos, categorias }: { insumos: Insumo[]; catego
       case "menor-custo":
         return a.custo - b.custo;
       case "categoria":
-        return (nomeCategoria.get(a.categoriaId) ?? "").localeCompare(nomeCategoria.get(b.categoriaId) ?? "", "pt-BR") || compararNome(a, b);
+        return (
+          (nomeCategoria.get(a.categoriaId) ?? "").localeCompare(
+            nomeCategoria.get(b.categoriaId) ?? "",
+            "pt-BR",
+          ) || compararNome(a, b)
+        );
     }
   });
 
@@ -122,14 +146,37 @@ export function TelaInsumos({ insumos, categorias }: { insumos: Insumo[]; catego
         <>
           <dl className="grid grid-cols-2 overflow-hidden rounded-2xl bg-card ring-1 ring-foreground/10 sm:grid-cols-4">
             {[
-              { rotulo: "Total", valor: String(insumos.length), cor: "bg-primary" },
-              { rotulo: "Custo total", valor: formatarMoeda(custoTotal), cor: "bg-success" },
-              { rotulo: "Média", valor: formatarMoeda(insumos.length ? custoTotal / insumos.length : 0), cor: "bg-highlight-strong" },
-              { rotulo: "Com perda", valor: String(comPerda), cor: "bg-destructive" },
+              {
+                rotulo: "Total",
+                valor: String(insumos.length),
+                cor: "bg-primary",
+              },
+              {
+                rotulo: "Custo total",
+                valor: formatarMoeda(custoTotal),
+                cor: "bg-success",
+              },
+              {
+                rotulo: "Média",
+                valor: formatarMoeda(
+                  insumos.length ? custoTotal / insumos.length : 0,
+                ),
+                cor: "bg-highlight-strong",
+              },
+              {
+                rotulo: "Com perda",
+                valor: String(comPerda),
+                cor: "bg-destructive",
+              },
             ].map((item, i) => (
               <div
                 key={item.rotulo}
-                className={cn("flex flex-col gap-1 p-4", i % 2 === 1 && "border-l", i >= 2 && "border-t sm:border-t-0", i === 2 && "sm:border-l")}
+                className={cn(
+                  "flex flex-col gap-1 p-4",
+                  i % 2 === 1 && "border-l",
+                  i >= 2 && "border-t sm:border-t-0",
+                  i === 2 && "sm:border-l",
+                )}
               >
                 <dt className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                   <span className={cn("size-1.5 rounded-full", item.cor)} />
@@ -144,7 +191,11 @@ export function TelaInsumos({ insumos, categorias }: { insumos: Insumo[]; catego
             <CabecalhoLista
               icone={Package}
               titulo="Insumos cadastrados"
-              info={termo ? `${visiveis.length} de ${insumos.length}` : plural(insumos.length, "insumo", "insumos")}
+              info={
+                termo
+                  ? `${visiveis.length} de ${insumos.length}`
+                  : plural(insumos.length, "insumo", "insumos")
+              }
             />
             {visiveis.length ? (
               <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 min-[1100px]:grid-cols-4 xl:grid-cols-5">
@@ -152,9 +203,15 @@ export function TelaInsumos({ insumos, categorias }: { insumos: Insumo[]; catego
                   <CardInsumo
                     key={i.id}
                     insumo={i}
-                    categoria={nomeCategoria.get(i.categoriaId) ?? "Sem categoria"}
-                    onEditar={() => setModal({ tipo: "editar-insumo", insumo: i })}
-                    onExcluir={() => setModal({ tipo: "excluir-insumo", insumo: i })}
+                    categoria={
+                      nomeCategoria.get(i.categoriaId) ?? "Sem categoria"
+                    }
+                    onEditar={() =>
+                      setModal({ tipo: "editar-insumo", insumo: i })
+                    }
+                    onExcluir={() =>
+                      setModal({ tipo: "excluir-insumo", insumo: i })
+                    }
                   />
                 ))}
               </ul>
@@ -176,7 +233,9 @@ export function TelaInsumos({ insumos, categorias }: { insumos: Insumo[]; catego
           categorias={categoriasOrdenadas}
           onNova={() => setModal({ tipo: "nova-categoria" })}
           onEditar={(c) => setModal({ tipo: "editar-categoria", categoria: c })}
-          onExcluir={(c) => setModal({ tipo: "excluir-categoria", categoria: c })}
+          onExcluir={(c) =>
+            setModal({ tipo: "excluir-categoria", categoria: c })
+          }
         />
       )}
 
@@ -197,10 +256,13 @@ export function TelaInsumos({ insumos, categorias }: { insumos: Insumo[]; catego
           onConcluido={concluir}
         />
       )}
-      {(modal?.tipo === "nova-categoria" || modal?.tipo === "editar-categoria") && (
+      {(modal?.tipo === "nova-categoria" ||
+        modal?.tipo === "editar-categoria") && (
         <ModalCategoria
           key={modal.tipo === "editar-categoria" ? modal.categoria.id : "nova"}
-          categoria={modal.tipo === "editar-categoria" ? modal.categoria : undefined}
+          categoria={
+            modal.tipo === "editar-categoria" ? modal.categoria : undefined
+          }
           onFechar={() => setModal(null)}
           onConcluido={concluir}
         />
@@ -242,11 +304,16 @@ function CardInsumo({
       <span className="max-w-full truncate rounded-full bg-primary-soft px-2 py-0.5 text-[9px] font-semibold tracking-wide text-primary uppercase">
         {categoria}
       </span>
-      <h3 className="line-clamp-2 flex min-h-8 items-center text-xs leading-tight font-semibold tracking-wide uppercase" title={i.nome}>
+      <h3
+        className="line-clamp-2 flex min-h-8 items-center text-xs leading-tight font-semibold tracking-wide uppercase"
+        title={i.nome}
+      >
         {i.nome}
       </h3>
       <div>
-        <p className="text-xl font-bold tabular-nums">{formatarMoeda(i.custo)}</p>
+        <p className="text-xl font-bold tabular-nums">
+          {formatarMoeda(i.custo)}
+        </p>
         <p className="text-[11px] text-muted-foreground">
           Total pago
           {i.perda > 0 && (
@@ -258,20 +325,36 @@ function CardInsumo({
       </div>
       <dl className="grid w-full grid-cols-2 gap-1.5 text-left">
         <div className="min-w-0 rounded-lg bg-muted px-1.5 py-1.5">
-          <dt className="truncate text-[9px] font-semibold tracking-wide text-muted-foreground uppercase">{rotulo}</dt>
-          <dd className="truncate text-xs font-semibold tabular-nums" title={formatarMoedaPrecisa(valor)}>
+          <dt className="truncate text-[9px] font-semibold tracking-wide text-muted-foreground uppercase">
+            {rotulo}
+          </dt>
+          <dd
+            className="truncate text-xs font-semibold tabular-nums"
+            title={formatarMoedaPrecisa(valor)}
+          >
             {formatarMoedaPrecisa(valor)}
           </dd>
         </div>
         <div className="min-w-0 rounded-lg bg-muted px-1.5 py-1.5">
-          <dt className="text-[9px] font-semibold tracking-wide text-muted-foreground uppercase">Volume</dt>
-          <dd className="truncate text-xs font-semibold tabular-nums" title={volume}>
+          <dt className="text-[9px] font-semibold tracking-wide text-muted-foreground uppercase">
+            Volume
+          </dt>
+          <dd
+            className="truncate text-xs font-semibold tabular-nums"
+            title={volume}
+          >
             {volume}
           </dd>
         </div>
       </dl>
       <div className="grid w-full grid-cols-2 gap-1.5">
-        <Button variant="outline" size="sm" onClick={onEditar} className="h-8 text-xs" aria-label={`Editar ${i.nome}`}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onEditar}
+          className="h-8 text-xs"
+          aria-label={`Editar ${i.nome}`}
+        >
           <Pencil data-icon="inline-start" />
           Editar
         </Button>
@@ -305,16 +388,25 @@ function AbaCategorias({
     <section className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-muted-foreground">
-          Crie e organize as categorias dos seus insumos. Renomear atualiza todos os insumos automaticamente.
+          Crie e organize as categorias dos seus insumos. Renomear atualiza
+          todos os insumos automaticamente.
         </p>
-        <Button variant="highlight" size="lg" className="h-10 shrink-0" onClick={onNova}>
+        <Button
+          variant="highlight"
+          size="lg"
+          className="h-10 shrink-0"
+          onClick={onNova}
+        >
           <Plus data-icon="inline-start" />
           Nova categoria
         </Button>
       </div>
       <ul className="flex flex-col gap-2">
         {categorias.map((c) => (
-          <li key={c.id} className="flex items-center gap-3 rounded-xl bg-card px-4 py-3 ring-1 ring-foreground/10">
+          <li
+            key={c.id}
+            className="flex items-center gap-3 rounded-xl bg-card px-4 py-3 ring-1 ring-foreground/10"
+          >
             <Tag className="size-4 shrink-0 text-highlight-strong" />
             <span className="min-w-0 flex-1">
               <span className="flex flex-wrap items-center gap-2">
@@ -326,11 +418,19 @@ function AbaCategorias({
                   </span>
                 )}
               </span>
-              <span className="block text-xs text-muted-foreground">{plural(c.insumos, "insumo", "insumos")}</span>
+              <span className="block text-xs text-muted-foreground">
+                {plural(c.insumos, "insumo", "insumos")}
+              </span>
             </span>
             {!c.sistema && (
               <span className="flex shrink-0">
-                <Button variant="ghost" size="icon" onClick={() => onEditar(c)} aria-label={`Editar ${c.nome}`} title="Editar">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onEditar(c)}
+                  aria-label={`Editar ${c.nome}`}
+                  title="Editar"
+                >
                   <Pencil />
                 </Button>
                 <Button

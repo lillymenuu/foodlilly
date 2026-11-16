@@ -79,6 +79,7 @@ Pasta `src/app/(app)/modulo-precificacao/receitas/`. Rotas: central `/receitas`,
 - Lista (`lista-fichas.tsx`): Grade | Lista (lembrada no navegador). Card de produto mostra o preço no 1º app de entrega com "+N" (demais no `title`), Custo/Venda/Margem e faixa da margem (`classificarMargem`).
 - Classificação da margem (`classificarMargem` em `calculo.ts`): abaixo de 35% Ruim (card da margem em vermelho), 35–40% Regular, a partir de 40% Boa, 60% Ótima e 90% Excelente (Ótima e Excelente com brilho animado na barra, utilitário `animate-brilho` em `globals.css`, parado com `prefers-reduced-motion`).
 - Vínculos circulares são bloqueados (`dependentesDe`) no editor e no servidor.
+- **Cadastro rápido de insumo:** no modal de adicionar ingrediente/embalagem (`modal-item.tsx`), "Não encontrou? Cadastrar novo insumo" abre o `ModalInsumo` por cima, já com o texto da busca no nome (embalagem já vem com a categoria de sistema). `criarInsumo` devolve o `id` e o insumo novo fica selecionado (mostrado localmente até o `refresh()` trazer a lista nova). `montarEditor` entrega as `categoriasInsumo`.
 - Receita (massa/recheio): seletor Massa | Recheio na ficha (troca zera a categoria; produto não troca de tipo); categoria e peso total obrigatórios; **tempo de preparo é calculado** = minutos de mão de obra + equipamentos (gravado em `tempo_preparo_min`).
 - Pendente: foto, PDF da ficha, compartilhar, "meta de vendas".
 

@@ -13,12 +13,20 @@ export function garantirCategoriasPadrao(negocioId: string) {
   return garantirItensPadrao(negocioId, "categoriasInsumoPadraoEm", () =>
     db
       .insert(categoriasInsumo)
-      .values(CATEGORIAS_PADRAO.map((c) => ({ negocioId, nome: c.nome, sistema: c.sistema ?? false })))
+      .values(
+        CATEGORIAS_PADRAO.map((c) => ({
+          negocioId,
+          nome: c.nome,
+          sistema: c.sistema ?? false,
+        })),
+      )
       .onConflictDoNothing(),
   );
 }
 
-export async function listarCategorias(negocioId: string): Promise<Categoria[]> {
+export async function listarCategorias(
+  negocioId: string,
+): Promise<Categoria[]> {
   const linhas = await db
     .select({
       id: categoriasInsumo.id,
