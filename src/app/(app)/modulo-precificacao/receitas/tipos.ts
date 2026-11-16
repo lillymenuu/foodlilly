@@ -1,9 +1,18 @@
-import { CakeSlice, CookingPot, ShoppingBag, type LucideIcon } from "lucide-react";
+import {
+  CakeSlice,
+  CookingPot,
+  ShoppingBag,
+  type LucideIcon,
+} from "lucide-react";
 
 import type { TipoFicha, TipoItem } from "./calculo";
 
 /** Segmento da URL de cada lista: /modulo-precificacao/receitas/massas */
-export const SEGMENTOS = { massas: "massa", recheios: "recheio", produtos: "produto" } as const;
+export const SEGMENTOS = {
+  massas: "massa",
+  recheios: "recheio",
+  produtos: "produto",
+} as const;
 export type Segmento = keyof typeof SEGMENTOS;
 
 export const BASE = "/modulo-precificacao/receitas";
@@ -44,9 +53,17 @@ export const INFO_TIPO: Record<
     singular: "produto",
     plural: "produtos",
     titulo: "Produtos",
-    descricao: "Combine receitas, insumos e embalagens para criar o que você vende.",
+    descricao:
+      "Combine receitas, insumos e embalagens para criar o que você vende.",
     icone: ShoppingBag,
-    composicao: ["ingrediente", "embalagem", "receita", "produto", "mao_obra", "equipamento"],
+    composicao: [
+      "ingrediente",
+      "embalagem",
+      "receita",
+      "produto",
+      "mao_obra",
+      "equipamento",
+    ],
   },
 };
 

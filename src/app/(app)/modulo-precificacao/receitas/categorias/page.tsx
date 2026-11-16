@@ -5,7 +5,10 @@ import { connection } from "next/server";
 import { Skeleton } from "@/components/ui/skeleton";
 import { obterNegocioAtualId } from "@/lib/negocio-atual";
 
-import { garantirCategoriasPadrao, listarCategorias } from "../../insumos/dados";
+import {
+  garantirCategoriasPadrao,
+  listarCategorias,
+} from "../../insumos/dados";
 import { listarCategoriasFicha } from "../dados";
 import { TelaCategorias } from "./tela-categorias";
 
@@ -29,7 +32,9 @@ async function Conteudo() {
     listarCategoriasFicha(negocioId, "produto"),
     listarCategorias(negocioId),
   ]);
-  return <TelaCategorias fichas={{ massa, recheio, produto }} insumos={insumos} />;
+  return (
+    <TelaCategorias fichas={{ massa, recheio, produto }} insumos={insumos} />
+  );
 }
 
 function Carregando() {

@@ -2,7 +2,14 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
-import { ChevronRight, FileText, Soup, Sparkles, Tags, type LucideIcon } from "lucide-react";
+import {
+  ChevronRight,
+  FileText,
+  Soup,
+  Sparkles,
+  Tags,
+  type LucideIcon,
+} from "lucide-react";
 import { and, count, eq } from "drizzle-orm";
 
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,7 +31,9 @@ export default function Page() {
           <Soup className="size-6" />
         </span>
         <div className="min-w-0">
-          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Receitas e produtos</h1>
+          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+            Receitas e produtos
+          </h1>
           <p className="mt-0.5 text-sm text-primary-foreground/75">
             Monte as fichas técnicas e descubra o custo real e o preço de venda.
           </p>
@@ -32,24 +41,51 @@ export default function Page() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold text-muted-foreground">Receitas e produtos</h2>
-        <Suspense fallback={<div className="grid gap-3 sm:grid-cols-3">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-28 rounded-xl" />)}</div>}>
+        <h2 className="text-sm font-semibold text-muted-foreground">
+          Receitas e produtos
+        </h2>
+        <Suspense
+          fallback={
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[0, 1, 2].map((i) => (
+                <Skeleton key={i} className="h-28 rounded-xl" />
+              ))}
+            </div>
+          }
+        >
           <CardsTipos />
         </Suspense>
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold text-muted-foreground">Ferramentas</h2>
+        <h2 className="text-sm font-semibold text-muted-foreground">
+          Ferramentas
+        </h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <Suspense
             fallback={
-              <Card href={`${BASE}/categorias`} icone={Tags} titulo="Categorias" descricao="Organize massas, recheios, produtos e insumos." />
+              <Card
+                href={`${BASE}/categorias`}
+                icone={Tags}
+                titulo="Categorias"
+                descricao="Organize massas, recheios, produtos e insumos."
+              />
             }
           >
             <CardCategorias />
           </Suspense>
-          <Card href="/modulo-precificacao/simulador" icone={Sparkles} titulo="Simulador de promoções" descricao="Monte combos e descontos sem perder margem." />
-          <Card href="/modulo-precificacao/relatorios" icone={FileText} titulo="Relatórios" descricao="Margens, custos e preços em gráficos." />
+          <Card
+            href="/modulo-precificacao/simulador"
+            icone={Sparkles}
+            titulo="Simulador de promoções"
+            descricao="Monte combos e descontos sem perder margem."
+          />
+          <Card
+            href="/modulo-precificacao/relatorios"
+            icone={FileText}
+            titulo="Relatórios"
+            descricao="Margens, custos e preços em gráficos."
+          />
         </div>
       </section>
     </>
@@ -60,8 +96,14 @@ async function CardCategorias() {
   await connection();
   const negocioId = await obterNegocioAtualId();
   const [[fichasCat], [insumosCat]] = await Promise.all([
-    db.select({ total: count() }).from(categoriasFicha).where(eq(categoriasFicha.negocioId, negocioId)),
-    db.select({ total: count() }).from(categoriasInsumo).where(eq(categoriasInsumo.negocioId, negocioId)),
+    db
+      .select({ total: count() })
+      .from(categoriasFicha)
+      .where(eq(categoriasFicha.negocioId, negocioId)),
+    db
+      .select({ total: count() })
+      .from(categoriasInsumo)
+      .where(eq(categoriasInsumo.negocioId, negocioId)),
   ]);
   return (
     <Card
@@ -69,7 +111,11 @@ async function CardCategorias() {
       icone={Tags}
       titulo="Categorias"
       descricao="Organize massas, recheios, produtos e insumos."
-      selo={plural(fichasCat.total + insumosCat.total, "categoria", "categorias")}
+      selo={plural(
+        fichasCat.total + insumosCat.total,
+        "categoria",
+        "categorias",
+      )}
     />
   );
 }
@@ -82,7 +128,8 @@ async function CardsTipos() {
     .from(fichas)
     .where(and(eq(fichas.negocioId, negocioId)))
     .groupBy(fichas.tipo);
-  const total = (t: TipoFicha) => contagem.find((c) => c.tipo === t)?.total ?? 0;
+  const total = (t: TipoFicha) =>
+    contagem.find((c) => c.tipo === t)?.total ?? 0;
 
   return (
     <div className="grid gap-3 sm:grid-cols-3">
@@ -127,9 +174,15 @@ function Card({
       <span className="min-w-0 flex-1">
         <span className="flex flex-wrap items-center gap-2 font-semibold">
           {titulo}
-          {selo && <span className="rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">{selo}</span>}
+          {selo && (
+            <span className="rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
+              {selo}
+            </span>
+          )}
         </span>
-        <span className="mt-0.5 block text-sm text-muted-foreground">{descricao}</span>
+        <span className="mt-0.5 block text-sm text-muted-foreground">
+          {descricao}
+        </span>
       </span>
       <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
     </Link>

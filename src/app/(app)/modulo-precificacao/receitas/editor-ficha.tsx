@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useId,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -70,6 +71,7 @@ import {
 } from "./calculo";
 import { ModalCategoriaFicha } from "./modais-categoria";
 import { ModalItem, ROTULO_ITEM, type OpcaoItem } from "./modal-item";
+import { useEmModal } from "./modal-rota";
 import {
   BASE,
   INFO_TIPO,
@@ -175,6 +177,8 @@ function estadoInicial(tipo: TipoFicha, f: FichaBase | null): Estado {
 export function EditorFicha(props: PropsEditor) {
   const { tipo: tipoInicial, ficha } = props;
   const router = useRouter();
+  const emModal = useEmModal();
+  const idForm = useId().replace(/:/g, "");
   const [estado, setEstado] = useState(() => estadoInicial(tipoInicial, ficha));
   const [salvo, setSalvo] = useState(() =>
     JSON.stringify(estadoInicial(tipoInicial, ficha)),
@@ -202,6 +206,11 @@ export function EditorFicha(props: PropsEditor) {
 
   // Ficha nova só conta como alterada depois que algo é preenchido.
   const alterado = JSON.stringify(estado) !== salvo;
+  // No modal: avisa se fechar com alterações não salvas.
+  const avisarSujo = emModal?.marcarSujo;
+  useEffect(() => {
+    avisarSujo?.(alterado);
+  }, [alterado, avisarSujo]);
   // Valor atual para a limpeza ao esconder a página (que roda com valores antigos).
   const alteradoRef = useRef(alterado);
   useEffect(() => {
@@ -446,7 +455,9 @@ export function EditorFicha(props: PropsEditor) {
           : `${info.singular[0].toUpperCase()}${info.singular.slice(1)} criad${tipo === "massa" ? "a" : "o"}`,
         dados.nome,
       );
-      if (!ficha && r.id) router.replace(`${BASE}/ficha/${r.id}`);
+      // Aberto como modal sobre a lista: fecha e a lista já vem atualizada (refresh da ação).
+      if (emModal) emModal.fechar(true);
+      else if (!ficha && r.id) router.replace(`${BASE}/ficha/${r.id}`);
     });
   }
 
@@ -508,7 +519,8 @@ export function EditorFicha(props: PropsEditor) {
           dica: "Classificação da margem de lucro",
         }
       : null;
-  const FORM = "form-ficha";
+  // Único por editor: com o modal, pode haver mais de um editor na página (um escondido).
+  const FORM = `form-ficha-${idForm}`;
 
   return (
     <form id={FORM} onSubmit={salvar} noValidate className="contents">
@@ -1347,7 +1359,8 @@ export function EditorFicha(props: PropsEditor) {
           onConcluido={(titulo, descricao) => {
             setSalvo(JSON.stringify(estado)); // não avisar "alterações não salvas" ao sair
             notificar.sucesso(titulo, descricao);
-            router.push(`${BASE}/${info.segmento}`);
+            if (emModal) emModal.fechar(true);
+            else router.push(`${BASE}/${info.segmento}`);
           }}
         />
       )}

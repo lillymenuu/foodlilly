@@ -2,12 +2,20 @@
 
 import { useState, useTransition } from "react";
 
-import { CampoModal, ModalExcluir, ModalFormulario } from "@/components/cadastro";
+import {
+  CampoModal,
+  ModalExcluir,
+  ModalFormulario,
+} from "@/components/cadastro";
 import { SelectNativo } from "@/components/cadastro/select-nativo";
 import { Input } from "@/components/ui/input";
 import { plural } from "@/lib/texto";
 
-import { criarCategoriaFicha, excluirCategoriaFicha, renomearCategoriaFicha } from "./actions";
+import {
+  criarCategoriaFicha,
+  excluirCategoriaFicha,
+  renomearCategoriaFicha,
+} from "./actions";
 import type { TipoFicha } from "./calculo";
 import { INFO_TIPO, LIMITES, type CategoriaFicha } from "./tipos";
 
@@ -21,14 +29,21 @@ export function ModalCategoriaFicha({
   tipo: TipoFicha;
   categoria?: CategoriaFicha;
   onFechar: () => void;
-  onConcluido: (titulo: string, descricao: string, criada?: { id: string; nome: string }) => void;
+  onConcluido: (
+    titulo: string,
+    descricao: string,
+    criada?: { id: string; nome: string },
+  ) => void;
 }) {
   const [nome, setNome] = useState(categoria?.nome ?? "");
   const [erro, setErro] = useState<string>();
   const [erroGeral, setErroGeral] = useState<string>();
   const [salvando, startTransition] = useTransition();
 
-  function mostrarErro(r: { mensagem: string; erros?: Record<string, string> }) {
+  function mostrarErro(r: {
+    mensagem: string;
+    erros?: Record<string, string>;
+  }) {
     if (r.erros?.nome) setErro(r.erros.nome);
     else setErroGeral(r.mensagem);
   }
@@ -102,7 +117,9 @@ export function ModalExcluirCategoriaFicha({
 }) {
   const info = INFO_TIPO[tipo];
   const [destino, setDestino] = useState("");
-  const outras = categorias.filter((c) => c.id !== categoria.id).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+  const outras = categorias
+    .filter((c) => c.id !== categoria.id)
+    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
   const temItens = categoria.fichas > 0;
   const nomeDestino = outras.find((c) => c.id === destino)?.nome;
 
@@ -117,13 +134,22 @@ export function ModalExcluirCategoriaFicha({
           : `Nenhum${info.singular === "massa" ? "a" : ""} ${info.singular} usa esta categoria.`
       }
       detalhes={[{ rotulo: info.titulo, valor: String(categoria.fichas) }]}
-      excluir={() => excluirCategoriaFicha(categoria.id, temItens && destino ? destino : null)}
+      excluir={() =>
+        excluirCategoriaFicha(
+          categoria.id,
+          temItens && destino ? destino : null,
+        )
+      }
       onFechar={onFechar}
       onConcluido={onConcluido}
     >
       {temItens && (
         <CampoModal id="categoria-ficha-destino" rotulo="Mover itens para">
-          <SelectNativo id="categoria-ficha-destino" value={destino} onChange={(e) => setDestino(e.target.value)}>
+          <SelectNativo
+            id="categoria-ficha-destino"
+            value={destino}
+            onChange={(e) => setDestino(e.target.value)}
+          >
             <option value="">Sem categoria</option>
             {outras.map((c) => (
               <option key={c.id} value={c.id}>
