@@ -27,11 +27,11 @@ export function TabelaNutricional({
   const u = config.liquido ? "ml" : "g";
   const linhas = linhasTabela(por100, config.porcaoG);
   return (
-    <div className="w-full max-w-[360px] border-2 border-black bg-white p-2 font-sans text-[13px] leading-tight text-black">
-      <p className="border-b-[3px] border-black pb-1 text-center text-base font-extrabold tracking-wide">
+    <div className="w-full max-w-[400px] border-2 border-black bg-white font-sans text-[13px] leading-tight text-black">
+      <p className="border-b-[3px] border-black px-2 py-1.5 text-center text-base font-extrabold tracking-wide">
         INFORMAÇÃO NUTRICIONAL
       </p>
-      <div className="border-b border-black py-1">
+      <div className="space-y-0.5 border-b-2 border-black px-2 py-1.5">
         {config.porcoesEmbalagem ? (
           <p>
             Porções por embalagem:{" "}
@@ -42,42 +42,52 @@ export function TabelaNutricional({
           Porção: {numero(config.porcaoG)} {u} ({config.medidaCaseira})
         </p>
       </div>
-      <table className="w-full border-collapse">
+      <table className="w-full table-fixed border-collapse">
+        <colgroup>
+          <col />
+          <col className="w-[18%]" />
+          <col className="w-[18%]" />
+          <col className="w-[14%]" />
+        </colgroup>
         <thead>
-          <tr className="border-b-[3px] border-black text-right font-bold whitespace-nowrap">
-            <th className="py-1 text-left font-bold">
+          <tr className="border-b-[3px] border-black font-bold whitespace-nowrap">
+            <th className="px-2 py-1.5 text-left">
               <span className="sr-only">Nutriente</span>
             </th>
-            <th className="px-1 py-1">100 {u}</th>
-            <th className="px-1 py-1">
+            <th className="border-l border-black px-1.5 py-1.5 text-right">
+              100 {u}
+            </th>
+            <th className="border-l border-black px-1.5 py-1.5 text-right">
               {numero(config.porcaoG)} {u}
             </th>
-            <th className="py-1 pl-1">%VD*</th>
+            <th className="border-l border-black px-1.5 py-1.5 text-right">
+              %VD*
+            </th>
           </tr>
         </thead>
         <tbody>
           {linhas.map((l) => (
-            <tr key={l.chave} className="border-b border-black last:border-b-[3px]">
+            <tr key={l.chave} className="border-b border-black last:border-b-0">
               <th
                 scope="row"
-                className={`py-[3px] text-left font-normal ${l.recuo ? "pl-3" : "font-semibold"}`}
+                className={`py-1 pr-1 text-left align-middle sm:whitespace-nowrap ${l.recuo ? "pl-4 font-normal" : "pl-2 font-semibold"}`}
               >
                 {l.rotulo} ({l.unidade})
               </th>
-              <td className="px-1 text-right tabular-nums">
+              <td className="border-l border-black px-1.5 py-1 text-right align-middle tabular-nums">
                 {formatarDeclarado(l.por100)}
               </td>
-              <td className="px-1 text-right tabular-nums">
+              <td className="border-l border-black px-1.5 py-1 text-right align-middle tabular-nums">
                 {formatarDeclarado(l.porcao)}
               </td>
-              <td className="pl-1 text-right tabular-nums">
+              <td className="border-l border-black px-1.5 py-1 text-right align-middle tabular-nums">
                 {l.vd === null ? "" : l.vd}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <p className="pt-1 text-[11px]">
+      <p className="border-t-[3px] border-black px-2 py-1.5 text-[11px]">
         *Percentual de valores diários fornecidos pela porção.
       </p>
     </div>
