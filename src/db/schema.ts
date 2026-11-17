@@ -2,6 +2,8 @@
 // Depois de alterar este arquivo: `npm run db:generate` e `npm run db:migrate`.
 
 import { sql } from "drizzle-orm";
+
+import type { ConfigTabela, NutricaoInsumo } from "@/lib/nutricao";
 import {
   boolean,
   date,
@@ -356,6 +358,8 @@ export const insumos = pgTable(
     perda: numeric({ precision: 5, scale: 2, mode: "number" })
       .notNull()
       .default(0),
+    /** Informação nutricional por 100 g/ml (rótulo ou TACO); nulo = não informada. */
+    nutricao: jsonb().$type<NutricaoInsumo>(),
     criadoEm: timestamp("criado_em", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -433,6 +437,8 @@ export const fichas = pgTable(
     favorito: boolean().notNull().default(false),
     /** Passos do modo de preparo, em ordem. */
     modoPreparo: jsonb("modo_preparo").$type<string[]>().notNull().default([]),
+    /** Produtos: porção, medida caseira e lupa da tabela nutricional; nulo = ainda não configurada. */
+    tabelaNutricional: jsonb("tabela_nutricional").$type<ConfigTabela>(),
     criadoEm: timestamp("criado_em", { withTimezone: true })
       .notNull()
       .defaultNow(),

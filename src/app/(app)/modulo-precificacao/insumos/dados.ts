@@ -58,6 +58,7 @@ export async function listarInsumos(negocioId: string): Promise<Insumo[]> {
     unidade: l.unidade,
     custo: l.custo,
     perda: l.perda,
+    nutricao: l.nutricao ?? null,
     criadoEm: l.criadoEm.toISOString(),
   }));
 }

@@ -36,6 +36,7 @@ import {
 } from "./actions";
 import { LeitorCodigo, leitorDisponivel } from "./leitor-codigo";
 import { ModalCategoria } from "./modais-categoria";
+import { estadoNutricao, lerNutricao, SecaoNutricao } from "./secao-nutricao";
 import {
   custosUnitarios,
   formatarVolume,
@@ -82,6 +83,9 @@ export function ModalInsumo({
   const [custo, setCusto] = useState(paraTexto(insumo?.custo, 2));
   const [perda, setPerda] = useState(
     insumo?.perda ? paraTexto(insumo.perda) : "",
+  );
+  const [nutricao, setNutricao] = useState(() =>
+    estadoNutricao(insumo?.nutricao ?? null),
   );
   const [erros, setErros] = useState<Record<string, string>>({});
   const [erroGeral, setErroGeral] = useState<string>();
@@ -182,6 +186,8 @@ export function ModalInsumo({
     if (!unidade) e.unidade = "Escolha a unidade.";
     if (!nCusto) e.custo = "Informe o custo.";
     if (Number.isNaN(nPerda)) e.perda = "Informe um número.";
+    const nut = lerNutricao(nutricao, unidade);
+    Object.assign(e, nut.erros);
     if (Object.keys(e).length || !unidade || !nVolume || !nCusto) {
       setErros(e);
       return;
@@ -195,6 +201,7 @@ export function ModalInsumo({
       unidade,
       custo: nCusto,
       perda: nPerda,
+      nutricao: nut.nutricao,
     };
     startTransition(async () => {
       const criado = insumo ? null : await criarInsumo(dados);
@@ -467,6 +474,15 @@ export function ModalInsumo({
             </dl>
           </div>
         )}
+
+        <SecaoNutricao
+          estado={nutricao}
+          onChange={setNutricao}
+          unidade={unidade}
+          nomeInsumo={nome}
+          erros={erros}
+          limparErro={(campo) => setErros(semErro(campo))}
+        />
       </ModalFormulario>
 
       {novaCategoria && (

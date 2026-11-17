@@ -7,6 +7,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { categoriasInsumo, insumos, UNIDADES } from "@/db/schema";
 import { garantirNegocioQuery, obterNegocioAtualId } from "@/lib/negocio-atual";
+import { NUTRIENTES } from "@/lib/nutricao";
 import { errosPorCampo, type ResultadoSalvar } from "@/lib/validacao";
 
 import { LIMITES, type DadosInsumo, type Unidade } from "./tipos";
@@ -216,6 +217,21 @@ export async function excluirCategoria(
 
 // ------------------------------------------------------------------ Insumos
 
+const valorNutriente = z.number().min(0).max(40000);
+const esquemaNutricao = z
+  .object({
+    fonte: z.enum(["rotulo", "taco"]),
+    tacoId: z.number().int().positive().nullable().optional(),
+    pesoUnidadeG: z.number().positive().max(100000).nullable().optional(),
+    valores: z.object(
+      Object.fromEntries(NUTRIENTES.map((n) => [n.chave, valorNutriente])) as Record<
+        (typeof NUTRIENTES)[number]["chave"],
+        typeof valorNutriente
+      >,
+    ),
+  })
+  .nullable();
+
 const esquemaInsumo = z.object({
   nome: z
     .string()
@@ -241,6 +257,7 @@ const esquemaInsumo = z.object({
     .number({ error: "Informe um número." })
     .min(0, "A perda não pode ser negativa.")
     .max(LIMITES.perdaMax, `Máximo: ${LIMITES.perdaMax}%.`),
+  nutricao: esquemaNutricao,
 });
 
 async function validarInsumo(negocioId: string, dados: DadosInsumo) {

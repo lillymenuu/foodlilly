@@ -1,4 +1,5 @@
 import {
+  Apple,
   Archive,
   ArrowLeftRight,
   Calculator,
@@ -133,6 +134,13 @@ export const navegacao: Modulo[] = [
         href: "/modulo-precificacao/relatorios",
         icone: FileText,
         descricao: "Margens, custos e preços em gráficos.",
+        grupo: "Ferramentas",
+      },
+      {
+        titulo: "Tabela nutricional",
+        href: "/modulo-precificacao/tabela-nutricional",
+        icone: Apple,
+        descricao: "Tabela no modelo da ANVISA, calculada pelas fichas técnicas.",
         grupo: "Ferramentas",
       },
     ],

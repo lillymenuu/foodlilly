@@ -96,6 +96,15 @@ Pasta `src/app/(app)/modulo-precificacao/receitas/`. Rotas: central `/receitas`,
 - **Margem meta**: coluna `negocios.margem_meta` (padrão 30), editada pelo lápis do indicador (`salvarMargemMeta`).
 - Gráficos: shadcn `chart` (Recharts 3). Cores por categoria em `--serie-1..5` (`globals.css`, utilitários `bg-serie-N`), ordem **validada para daltonismo** com o validador de paletas: não reordenar nem trocar sem validar. Legenda sempre visível; animações respeitam `prefers-reduced-motion`.
 
+## Tabela nutricional (`modulo-precificacao/tabela-nutricional/`)
+
+- **Insumo:** seção recolhível "Informação nutricional" no `ModalInsumo` (`insumos/secao-nutricao.tsx`), por 100 g/ml, do **rótulo** ou da **TACO** (busca preenche os campos, editáveis). Gravada em `insumos.nutricao` (jsonb `NutricaoInsumo`); campos vazios = 0; energia vazia = calculada (4/4/9, fibra 2: Anexo XXII). Insumo em unidade/cm/m pede o peso de 1 unidade em g; ml = g.
+- **TACO** 4ª ed. em `src/data/taco.json` (gerado dos CSVs de raulfdm/taco-api, MIT), lido por `src/lib/taco.ts` só ao abrir a busca. A TACO não tem açúcares (só os açúcares puros vêm preenchidos).
+- **Cálculo** em `src/lib/nutricao.ts` (servidor e navegador): soma ingredientes (embalagens não) e receitas vinculadas (gramas ÷ peso total); por 100 g = total ÷ peso total da ficha. Pendências: insumo sem dados, sem peso da unidade, ficha sem peso total. `linhasTabela` aplica o arredondamento (IN 75 Anexo III) e os valores não significativos (Anexo IV); VDR do Anexo II (trans 2 g); lupa pelo Anexo XV (sólido 15 g/6 g/600 mg; líquido 7,5/3/300), **só sugerida**: o cliente marca à mão.
+- Porções do Anexo V em `src/config/porcoes-anvisa.ts` (seleção para food service + "Outro"), com `sugerirCategoria` pelo nome. Configuração do produto em `fichas.tabela_nutricional` (jsonb `ConfigTabela`: categoria, porção, medida caseira, porções por embalagem, líquido, lupa).
+- Telas: lista (prontos × faltam dados, com "Completar" abrindo o `ModalInsumo`) e `/[id]` (porção + lupa à esquerda, prévia à direita). "Imprimir" copia só o rótulo para um iframe com os estilos e classes de `<html>`/`<body>` (`imprimir.ts`); CSS de impressão na página não funcionou por causa do layout com rolagem.
+- Aviso na tela: produto preparado e vendido no próprio estabelecimento não é obrigado a ter tabela (IN 75, Anexo I, item 3).
+
 ## Financeiro (`modulo-financeiro/`)
 
 - **Contas** (`/modulo-financeiro/contas`, "Configurações financeiras"): tabela `contas_bancarias` (nome, tipo: corrente/poupança/carteira digital/pagamento/outro, saldo inicial que pode ser negativo, data do saldo inicial, padrão, cor do cartão). **Uma conta padrão por negócio** (índice único parcial): a primeira é sempre a padrão; a padrão só deixa de ser quando outra é marcada; ao excluir a padrão, a mais antiga vira padrão.

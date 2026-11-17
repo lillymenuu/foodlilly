@@ -1,4 +1,5 @@
 import type { UNIDADES } from "@/db/schema";
+import type { NutricaoInsumo } from "@/lib/nutricao";
 
 export type Unidade = (typeof UNIDADES)[number];
 
@@ -19,6 +20,8 @@ export type Insumo = {
   unidade: Unidade;
   custo: number;
   perda: number;
+  /** Por 100 g/ml (rótulo ou TACO); null = não informada. */
+  nutricao: NutricaoInsumo | null;
   criadoEm: string;
 };
 
